@@ -5,10 +5,10 @@ import { getCurrentBorrowing, getBorrowSummary } from '../api/borrow'
 
 const router = useRouter()
 
-// Simulated reader info — will come from auth store later
+const realName = ref(localStorage.getItem('realName') || 'Reader')
 const readerInfo = reactive({
-  name: 'Wang Xiaoming',
-  initials: 'W',
+  name: realName.value,
+  initials: realName.value.charAt(0).toUpperCase(),
   readerNo: 'RD20260001',
   readerType: 'Student',
 })
@@ -67,7 +67,10 @@ function goToBookDetail(bookInfoId: number) {
       <div class="nav__links">
       <span v-for="link in navLinks" :key="link" class="nav__link" @click="navigateTo(link)">{{ link }}</span>
       </div>
-      <div class="nav__avatar">W</div>
+      <div class="nav__user">
+        <span class="nav__username">{{ readerInfo.name }}</span>
+        <div class="nav__avatar">{{ readerInfo.initials }}</div>
+      </div>
     </nav>
 
     <!-- Main Layout -->
@@ -176,6 +179,8 @@ function goToBookDetail(bookInfoId: number) {
 .nav__links { display: flex; gap: 24px; flex: 1; }
 .nav__link { font-size: 14px; color: var(--text-secondary,#666); cursor: pointer; transition: color 0.15s; }
 .nav__link:hover { color: var(--accent,#4A9FD8); }
+.nav__user { display: flex; align-items: center; gap: 10px; }
+.nav__username { font-size: 13px; font-weight: 500; color: var(--text-secondary,#666); }
 .nav__avatar {
   width: 36px; height: 36px; border-radius: 999px;
   background: var(--accent-light,#E8F4FD);

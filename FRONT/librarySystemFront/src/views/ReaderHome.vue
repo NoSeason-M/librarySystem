@@ -8,7 +8,8 @@ const router = useRouter()
 
 // Nav
 const navLinks = ['Home', 'Browse', 'Categories', 'My Books']
-const userInitials = ref('W')
+const realName = ref(localStorage.getItem('realName') || 'Reader')
+const userInitials = ref(realName.value.charAt(0).toUpperCase())
 
 // Search
 const keyword = ref('')
@@ -77,7 +78,10 @@ function goToDashboard() {
       <div class="nav__links">
         <span v-for="link in navLinks" :key="link" class="nav__link">{{ link }}</span>
       </div>
-      <div class="nav__avatar" @click="goToDashboard" style="cursor:pointer">{{ userInitials }}</div>
+      <div class="nav__user">
+        <span class="nav__username">{{ realName }}</span>
+        <div class="nav__avatar" @click="goToDashboard">{{ userInitials }}</div>
+      </div>
     </nav>
 
     <!-- Hero Section (1440×322) -->
@@ -210,6 +214,19 @@ function goToDashboard() {
   font-weight: 600;
   color: var(--accent, #4A9FD8);
   flex-shrink: 0;
+}
+
+.nav__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav__username {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary, #666);
 }
 
 /* ===== Hero Section (1440×322) ===== */

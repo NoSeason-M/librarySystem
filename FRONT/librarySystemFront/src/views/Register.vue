@@ -259,18 +259,21 @@ function goToLogin() {
   min-height: 100vh;
   display: flex;
   background: var(--bg-secondary);
+  padding: 24px;
+  box-sizing: border-box;
 }
 
 /* ===== Left Panel ===== */
 .left-panel {
   width: 560px;
-  min-height: 100vh;
+  height: calc(100vh - 48px);
   background: var(--bg-inverse);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 60px;
   flex-shrink: 0;
+  border-radius: 16px 0 0 16px;
 }
 
 .panel-top {
@@ -342,6 +345,8 @@ function goToLogin() {
   align-items: center;
   justify-content: center;
   padding: 40px;
+  background: var(--bg-primary);
+  border-radius: 0 16px 16px 0;
 }
 
 .form-card {

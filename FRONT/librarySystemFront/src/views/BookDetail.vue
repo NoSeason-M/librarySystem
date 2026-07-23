@@ -7,6 +7,8 @@ import type { BookItem, BookCopyItem } from '../api/books'
 const route = useRoute()
 const router = useRouter()
 
+const realName = ref(localStorage.getItem('realName') || 'Reader')
+const userInitials = ref(realName.value.charAt(0).toUpperCase())
 const book = ref<BookItem | null>(null)
 const copies = ref<BookCopyItem[]>([])
 const loading = ref(true)
@@ -89,6 +91,11 @@ function statusBadgeColor(status: string): string {
     <!-- Nav Bar (1440×66) -->
     <nav class="nav">
       <span class="nav__logo" @click="router.push('/home')">📚 LibraryOS</span>
+      <div style="flex:1"></div>
+      <div class="nav__user">
+        <span class="nav__username">{{ realName }}</span>
+        <div class="nav__avatar">{{ userInitials }}</div>
+      </div>
     </nav>
 
     <!-- Main Content (padding [40,80], gap=28) -->
@@ -232,6 +239,17 @@ function statusBadgeColor(status: string): string {
   padding: 16px 40px;
   background: var(--bg-primary, #FFFFFF);
   height: 66px;
+}
+.nav__user { display: flex; align-items: center; gap: 10px; }
+.nav__username { font-family: var(--font-sans, 'Inter', sans-serif); font-size: 13px; font-weight: 500; color: var(--text-secondary, #666); }
+.nav__avatar {
+  width: 36px; height: 36px; border-radius: 999px;
+  background: var(--accent-light, #E8F4FD);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 13px; font-weight: 600; color: var(--accent, #4A9FD8);
+  flex-shrink: 0;
+  cursor: pointer;
 }
 .nav__logo {
   font-family: var(--font-sans, 'Inter', sans-serif);

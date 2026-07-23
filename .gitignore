@@ -55,3 +55,6 @@ temp/
 # Server local temp files
 Server/librarySystemServer/target/
 Server/librarySystemServer/*.log
+
+# ===== Development docs (not for GitHub) =====
+todo.md
