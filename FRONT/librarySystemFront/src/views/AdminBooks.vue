@@ -15,8 +15,6 @@ const adminNav = [
   { icon: '💰', label: 'Fines' },
   { icon: '⚙️', label: 'Settings' },
 ]
-const realName = ref(localStorage.getItem('realName') || 'Admin')
-const userInitials = ref(realName.value.charAt(0).toUpperCase())
 
 const keyword = ref('')
 const books = ref<BookItem[]>([])
@@ -129,13 +127,6 @@ onMounted(() => { loadBooks(); loadCategories() })
 
 <template>
   <div class="admin-books">
-    <aside class="sidebar">
-      <div class="sidebar__logo"><span>📚</span><span class="sidebar__logo-text">LibraryOS</span></div>
-      <nav class="sidebar__nav">
-        <div v-for="item in adminNav" :key="item.label" class="sidebar__item" :class="{ 'sidebar__item--active': item.label === 'Books' }" @click="navigateTo(item.label)"><span class="sidebar__item-icon">{{ item.icon }}</span><span>{{ item.label }}</span></div>
-      </nav>
-      <div class="sidebar__bottom"><div class="sidebar__avatar">{{ userInitials }}</div><span>{{ realName }}</span></div>
-    </aside>
 
     <main class="main">
       <header class="header"><h1 class="header__title">Books</h1><button class="btn-add" @click="openAddModal"><span class="btn-add__icon">+</span><span>Add New Book</span></button></header>
@@ -247,7 +238,7 @@ onMounted(() => { loadBooks(); loadCategories() })
 </template>
 
 <style scoped>
-.admin-books { display: flex; min-height: 100vh; background: var(--bg-secondary, #F7F8FA); }
+.admin-books { display: flex; min-height: 100vh; flex: 1; width: 100%; background: var(--bg-secondary, #F7F8FA); }
 .sidebar { width: 240px; background: var(--bg-inverse, #0A0A0A); display: flex; flex-direction: column; flex-shrink: 0; }
 .sidebar__logo { display: flex; align-items: center; gap: 10px; padding: 20px; font-size: 22px; color: var(--text-inverse, #FFF); }
 .sidebar__logo-text { font-family: var(--font-sans, Inter); font-size: 18px; font-weight: 700; }

@@ -58,3 +58,5 @@ Server/librarySystemServer/*.log
 
 # ===== Development docs (not for GitHub) =====
 todo.md
+
+problem.md

@@ -16,8 +16,6 @@ const adminNav = [
   { icon: '💰', label: 'Fines' },
   { icon: '⚙️', label: 'Settings' },
 ]
-const realName = ref(localStorage.getItem('realName') || 'Admin')
-const userInitials = ref(realName.value.charAt(0).toUpperCase())
 
 // ===== Table =====
 const keyword = ref('')
@@ -244,21 +242,6 @@ onMounted(() => {
 <template>
   <div class="admin-readers">
     <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar__logo"><span>📚</span><span class="sidebar__logo-text">LibraryOS</span></div>
-      <nav class="sidebar__nav">
-        <div v-for="item in adminNav" :key="item.label"
-          class="sidebar__item"
-          :class="{ 'sidebar__item--active': item.label === 'Readers' }"
-          @click="navigateTo(item.label)">
-          <span class="sidebar__item-icon">{{ item.icon }}</span><span>{{ item.label }}</span>
-        </div>
-      </nav>
-      <div class="sidebar__bottom">
-        <div class="sidebar__avatar">{{ userInitials }}</div>
-        <span>{{ realName }}</span>
-      </div>
-    </aside>
 
     <!-- Main -->
     <main class="main">
@@ -474,7 +457,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.admin-readers { display: flex; min-height: 100vh; background: var(--bg-secondary, #F7F8FA); }
+.admin-readers { display: flex; min-height: 100vh; flex: 1; width: 100%; background: var(--bg-secondary, #F7F8FA); }
 
 /* Sidebar */
 .sidebar { width: 240px; background: var(--bg-inverse, #0A0A0A); display: flex; flex-direction: column; flex-shrink: 0; }

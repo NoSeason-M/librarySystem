@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCirculationStats, getCollectionStats, getReaderStats, getRecentActivity } from '../api/statistics'
 
@@ -15,6 +15,8 @@ const adminNav = [
   { icon: '⚙️', label: 'Settings' },
 ]
 
+const dayjs = ref('')
+
 const stats = reactive({
   totalBooks: { value: '—', change: '' },
   activeReaders: { value: '—', change: '' },
@@ -27,6 +29,8 @@ const activities = ref<{ user: string; action: string; time: string; color: stri
 const todayStr = ref('')
 const loading = ref(true)
 const error = ref('')
+
+const categoryNames = computed(() => categoryData.value.slice(0, 5))
 
 onMounted(async () => {
   todayStr.value = new Date().toLocaleDateString('en-US', {
@@ -67,6 +71,7 @@ function navigate(label: string) {
   if (label === 'Books') { router.push('/admin/books'); return }
   if (label === 'Readers') { router.push('/admin/readers'); return }
   if (label === 'Statistics') { router.push('/admin/statistics'); return }
+  if (label === 'Settings') { router.push('/admin/settings'); return }
   router.push('/admin')
 }
 
@@ -84,24 +89,6 @@ function quickAction(label: string) {
 
 <template>
   <div class="admin-layout">
-    <aside class="sidebar">
-      <div class="sidebar__logo">
-        <span>📚</span><span class="sidebar__logo-text">LibraryOS</span>
-      </div>
-      <nav class="sidebar__nav">
-        <div v-for="item in adminNav" :key="item.label"
-          class="sidebar__item"
-          :class="{ 'sidebar__item--active': item.label === 'Dashboard' }"
-          @click="navigate(item.label)">
-          <span class="sidebar__item-icon">{{ item.icon }}</span>
-          <span>{{ item.label }}</span>
-        </div>
-      </nav>
-      <div class="sidebar__bottom">
-        <div class="sidebar__avatar">SA</div>
-        <span>System Admin</span>
-      </div>
-    </aside>
 
     <main class="main">
       <header class="header">
@@ -164,7 +151,7 @@ function quickAction(label: string) {
           <h2 class="section-title">📊 Collection by Category</h2>
           <div class="category-chart">
             <div v-if="categoryData.length === 0" class="empty-state">No category data</div>
-            <div v-for="cat in categoryData" :key="cat.name" class="cat-row">
+            <div v-for="cat in categoryNames" :key="cat.name" class="cat-row">
               <span class="cat-name">{{ cat.name }}</span>
               <div class="cat-bar-bg">
                 <div class="cat-bar-fill" :style="{ width: Math.max(cat.percentage * 2.8, 6) + 'px' }"></div>
@@ -179,9 +166,7 @@ function quickAction(label: string) {
 </template>
 
 <style scoped>
-.admin-layout { display: flex; min-height: 100vh; background: var(--bg-secondary, #F7F8FA); }
-
-/* Sidebar */
+.admin-layout { display: flex; min-height: 100vh; flex: 1; width: 100%; background: var(--bg-secondary, #F7F8FA); }
 .sidebar { width: 240px; background: var(--bg-inverse, #0A0A0A); display: flex; flex-direction: column; flex-shrink: 0; }
 .sidebar__logo { display: flex; align-items: center; gap: 10px; padding: 20px; font-size: 22px; color: var(--text-inverse,#FFF); }
 .sidebar__logo-text { font-family: var(--font-sans,Inter); font-size: 18px; font-weight: 700; }
@@ -192,50 +177,36 @@ function quickAction(label: string) {
 .sidebar__item-icon { font-size: 16px; width: 20px; text-align: center; }
 .sidebar__bottom { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08); font-family: var(--font-sans,Inter); font-size: 12px; color: var(--text-inverse,#FFF); }
 .sidebar__avatar { width: 32px; height: 32px; border-radius: 999px; background: var(--accent-light,#E8F4FD); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--accent,#4A9FD8); flex-shrink: 0; }
-
-/* Main */
 .main { flex: 1; padding: 32px 40px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; }
 .header { display: flex; justify-content: space-between; align-items: center; }
 .header__title { font-family: var(--font-sans,Inter); font-size: 24px; font-weight: 700; color: var(--text-primary,#1A1A1A); margin: 0; }
 .header__date { padding: 8px 14px; border-radius: 999px; background: var(--bg-primary,#FFF); border: 1px solid var(--border,#E5E7EB); font-size: 12px; color: var(--text-secondary,#666); }
-
 .error-msg { padding: 12px; border-radius: 10px; background: rgba(248,113,113,0.1); color: var(--danger,#F87171); font-size: 13px; }
 .loading-msg { padding: 20px; text-align: center; color: var(--text-muted,#888); font-size: 14px; }
-
-/* Stats */
 .stats-row { display: flex; gap: 16px; }
 .stat-card { flex: 1; padding: 20px; background: var(--bg-primary,#FFF); border-radius: var(--card-radius,16px); border: 1px solid var(--border,#E5E7EB); display: flex; flex-direction: column; gap: 8px; }
 .stat-label { font-size: 12px; color: var(--text-muted,#888); }
 .stat-value { font-family: var(--font-mono,'Geist Mono',monospace); font-size: 28px; font-weight: 700; color: var(--text-primary,#1A1A1A); line-height: 1.2; }
 .stat-trend { font-size: 12px; }
-
-/* Two column */
 .two-col { display: flex; gap: 20px; flex: 1; }
 .col-left { flex: 1; display: flex; flex-direction: column; gap: 16px; }
 .col-right { width: 360px; display: flex; flex-direction: column; gap: 16px; flex-shrink: 0; }
 .section-title { font-family: var(--font-sans,Inter); font-size: 16px; font-weight: 600; color: var(--text-primary,#1A1A1A); margin: 0; }
-
-/* Activity */
 .activity-list { background: var(--bg-primary,#FFF); border-radius: var(--card-radius,16px); border: 1px solid var(--border,#E5E7EB); padding: 8px; display: flex; flex-direction: column; gap: 2px; }
 .activity-item { display: flex; gap: 12px; align-items: center; padding: 10px 12px; }
 .activity-dot { width: 8px; height: 8px; border-radius: 999px; flex-shrink: 0; }
 .activity-info { flex: 1; }
 .activity-desc { font-size: 13px; color: var(--text-primary,#1A1A1A); margin: 0; }
 .activity-time { font-size: 11px; color: var(--text-muted,#888); margin: 0; margin-top: 2px; }
-
-/* Quick Actions */
 .quick-actions { display: flex; flex-direction: column; gap: 8px; }
 .action-btn { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: var(--bg-primary,#FFF); border: 1px solid var(--border,#E5E7EB); cursor: pointer; transition: box-shadow 0.15s; font-size: 20px; }
 .action-btn:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 .action-btn__label { font-family: var(--font-sans,Inter); font-size: 14px; font-weight: 500; color: var(--text-primary,#1A1A1A); }
-
-/* Category Chart */
 .category-chart { background: var(--bg-primary,#FFF); border-radius: var(--card-radius,16px); border: 1px solid var(--border,#E5E7EB); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 .cat-row { display: flex; gap: 8px; align-items: center; }
 .cat-name { font-size: 12px; color: var(--text-secondary,#666); width: 100px; flex-shrink: 0; }
 .cat-bar-bg { width: 140px; height: 8px; border-radius: 999px; background: var(--bg-secondary,#F7F8FA); flex-shrink: 0; }
 .cat-bar-fill { height: 8px; border-radius: 999px; background: var(--accent,#4A9FD8); transition: width 0.5s ease; }
 .cat-pct { font-family: var(--font-mono,'Geist Mono',monospace); font-size: 11px; color: var(--text-muted,#888); }
-
 .empty-state { font-size: 13px; color: var(--text-muted,#888); padding: 20px; text-align: center; }
 </style>

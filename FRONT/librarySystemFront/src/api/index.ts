@@ -10,7 +10,7 @@ export interface ApiResponse<T = any> {
 
 const http: AxiosInstance = axios.create({
   baseURL: '/api',
-  timeout: 15000,
+  timeout: 10000,  // 10s timeout for faster failure feedback
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -39,6 +39,10 @@ http.interceptors.response.use(
     return res.data as any
   },
   async (error) => {
+    // Friendly timeout message
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      return Promise.reject(new Error('Request timed out. Please try again.'))
+    }
     if (error.response?.status === 401) {
       try {
         await doRefreshToken()
@@ -63,7 +67,6 @@ async function doRefreshToken(): Promise<void> {
   localStorage.setItem('refreshToken', data.refreshToken)
 }
 
-// Handle refresh in interceptor (avoids circular axios instance call)
 let isRefreshing = false
 let refreshSubscribers: Array<(token: string) => void> = []
 

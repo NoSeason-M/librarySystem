@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 @MapperScan("com.library.librarysystem.mapper")
-public class LibrarySystemServerApplication {
-
+public class
+LibrarySystemServerApplication {
     public static void main(String[] args) {
         SpringApplication.run(LibrarySystemServerApplication.class, args);
     }
