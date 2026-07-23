@@ -9,6 +9,8 @@ CREATE DATABASE IF NOT EXISTS library_system
     COLLATE utf8mb4_unicode_ci;
 
 USE library_system;
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
 
 -- ============================================================================
 -- 1. 系统管理基础表
@@ -291,7 +293,7 @@ CREATE TABLE book_info (
     pages            INT             DEFAULT NULL                COMMENT '页数',
     price            DECIMAL(10,2)   DEFAULT NULL                COMMENT '定价',
     binding          VARCHAR(20)     DEFAULT NULL                COMMENT '装帧(平装/精装/软精装)',
-    language         VARCHAR(20)     DEFAULT '中文'               COMMENT '语种',
+    language         VARCHAR(20)     DEFAULT 'Chinese'            COMMENT '语种',
     summary          TEXT            DEFAULT NULL                COMMENT '内容简介',
     cover_url        VARCHAR(255)    DEFAULT NULL                COMMENT '封面图片URL',
     table_of_contents TEXT           DEFAULT NULL                COMMENT '目录',
@@ -791,3 +793,96 @@ INSERT INTO sys_dict_item (dict_code, item_label, item_value, sort, default_flag
     ('gender', '未知', '0', 1, 1),
     ('gender', '男', '1', 2, 0),
     ('gender', '女', '2', 3, 0);
+
+-- ============================================================================
+-- 8. 借阅流程种子数据
+-- ============================================================================
+
+-- 8.1 补充分类 (二级分类，便于测试)
+INSERT INTO category (id, name, code, parent_id, level, sort) VALUES
+    (23, '中国文学',   'I2', 9,  2, 1),
+    (24, '外国文学',   'I3', 9,  2, 2),
+    (25, '自动化技术、计算机技术', 'TP3', 18, 2, 1),
+    (26, '中国历史',   'K2', 11, 2, 1);
+
+-- 8.2 补充出版社
+INSERT INTO publisher (id, name, short_name) VALUES
+    (11, '重庆出版社',       '重庆出版社'),
+    (12, '上海译文出版社',   '上海译文');
+
+-- 8.3 图书信息 (6 本热门图书)
+INSERT INTO book_info (id, isbn, title, author, translator, publisher_id, category_id, publish_date, pages, price, binding, language, summary, total_copies, available_copies, borrow_count, rating, rating_count, status) VALUES
+    (1, '9787536692930', '三体',            '刘慈欣',        NULL,               11, 23, '2008-01-01', 302,  23.00, '平装', 'Chinese', '文化大革命如火如荼进行的同时，军方探寻外星文明的绝秘计划"红岸工程"取得了突破性进展。', 3, 2, 128, 4.8, 1024, 1),
+    (2, '9787544253994', '百年孤独',        '加西亚·马尔克斯', '范晔',          12, 24, '2011-06-01', 360,  39.50, '精装', 'Chinese', '魔幻现实主义文学代表作，描写了布恩迪亚家族七代人的传奇故事。', 2, 1, 85,  4.7, 856,  1),
+    (3, '9787111641247', '深入理解Java虚拟机', '周志明',      NULL,               2,  25, '2019-12-01', 540, 129.00, '平装', 'Chinese', '从Java虚拟机的整体架构出发，深入剖析其工作原理和实现细节。', 3, 1, 210, 4.9, 1520, 1),
+    (4, '9787111407010', '算法导论',        'Thomas H.Cormen', '殷建平等',       2,  25, '2012-12-01', 1312, 128.00, '精装', 'Chinese', '全面介绍了多种算法的设计和分析方法。', 2, 1, 156, 4.8, 2100, 1),
+    (5, '9787508660752', '人类简史',        '尤瓦尔·赫拉利',  '林俊宏',          5,  26, '2014-11-01', 440,  68.00, '平装', 'Chinese', '从十万年前有生命迹象开始到21世纪资本、科技交织的人类发展史。', 2, 1, 92,  4.6, 680,  1),
+    (6, '9787020024759', '围城',            '钱钟书',         NULL,               1,  23, '1991-02-01', 359,  29.80, '平装', 'Chinese', '一幅栩栩如生的市井百态图，人生的酸甜苦辣千般滋味均在其中。', 2, 2, 67,  4.5, 450,  1);
+
+-- 8.4 图书副本 (每本书 2~3 本，含多种状态)
+INSERT INTO book_copy (book_id, barcode, location_id, status, price, purchase_date, source) VALUES
+    -- 三体 (3 本: 1 borrowed, 1 in, 1 in)
+    (1, '9787536692930-001', 2, 'borrowed', 23.00, '2024-01-15', '采购'),
+    (1, '9787536692930-002', 2, 'in',       23.00, '2024-01-15', '采购'),
+    (1, '9787536692930-003', 2, 'in',       23.00, '2024-06-01', '捐赠'),
+    -- 百年孤独 (2 本: 1 borrowed, 1 in)
+    (2, '9787544253994-001', 2, 'borrowed', 39.50, '2024-03-01', '采购'),
+    (2, '9787544253994-002', 2, 'in',       39.50, '2024-03-01', '采购'),
+    -- 深入理解Java虚拟机 (3 本: 1 borrowed 逾期, 1 borrowed, 1 in)
+    (3, '9787111641247-001', 3, 'borrowed', 129.00,'2024-02-01', '采购'),
+    (3, '9787111641247-002', 3, 'borrowed', 129.00,'2024-02-01', '采购'),
+    (3, '9787111641247-003', 3, 'in',       129.00,'2024-08-01', '采购'),
+    -- 算法导论 (2 本: 1 borrowed, 1 in)
+    (4, '9787111407010-001', 3, 'borrowed', 128.00,'2024-04-01', '采购'),
+    (4, '9787111407010-002', 3, 'in',       128.00,'2024-04-01', '采购'),
+    -- 人类简史 (2 本: 1 borrowed, 1 in)
+    (5, '9787508660752-001', 1, 'borrowed', 68.00, '2024-05-01', '采购'),
+    (5, '9787508660752-002', 1, 'in',       68.00, '2024-05-01', '采购'),
+    -- 围城 (2 本: 1 已还, 1 in)
+    (6, '9787020024759-001', 2, 'in',       29.80, '2024-06-01', '采购'),
+    (6, '9787020024759-002', 2, 'in',       29.80, '2024-06-01', '采购');
+
+-- 8.5 新增读者(reader02 李华，教师身份)
+INSERT INTO sys_user (id, username, password, real_name, email, status) VALUES
+    (5, 'reader02', '$2a$10$v/cUl3YItml6dwF2dDF.keklXKvffZydWLPYYnYe2TT/h7UBYZx8G', '李华', 'lihua@test.com', 1);
+INSERT INTO sys_user_role (user_id, role_id) VALUES
+    (5, 4); -- reader02 → ROLE_READER
+INSERT INTO reader (id, user_id, reader_no, reader_type_id, register_date) VALUES
+    (2, 5, 'RD20260002', 2, CURDATE());
+
+-- 8.6 借阅记录 (borrow_record)
+-- status: borrowed=当前借阅中, returned=已归还
+-- 王同学(RD20260001, reader_id=1): 当前3本 + 1本已还
+-- 李华(RD20260002, reader_id=2): 当前2本
+INSERT INTO borrow_record (id, reader_id, book_copy_id, book_info_id, borrow_date, due_date, return_date, renew_count, status, operator_id) VALUES
+    -- 王同学借三体 (副本001) — 逾期未还 (应还 2026-07-15)
+    (1, 1, 1, 1, '2026-07-01 10:00:00', '2026-07-15', NULL, 0, 'borrowed', 2),
+    -- 王同学借百年孤独 (副本004) — 当前正常 (应还 2026-07-31)
+    (2, 1, 4, 2, '2026-07-01 10:30:00', '2026-07-31', NULL, 0, 'borrowed', 2),
+    -- 王同学借人类简史 (副本011) — 当前正常 (应还 2026-08-05)
+    (3, 1, 11, 5, '2026-07-06 14:00:00', '2026-08-05', NULL, 0, 'borrowed', 2),
+    -- 王同学借围城 (副本013) — 已归还
+    (4, 1, 13, 6, '2026-07-01 09:00:00', '2026-07-15', '2026-07-14 16:30:00', 0, 'returned', 2),
+    -- 李华借深入理解JVM (副本006) — 逾期未还 (应还 2026-07-10)
+    (5, 2, 6, 3, '2026-06-10 11:00:00', '2026-07-10', NULL, 0, 'borrowed', 2),
+    -- 李华借深入理解JVM (副本007) — 当前正常 (应还 2026-08-10)
+    (6, 2, 7, 3, '2026-07-11 15:00:00', '2026-08-10', NULL, 0, 'borrowed', 2),
+    -- 李华借算法导论 (副本009) — 当前正常 (应还 2026-08-10)
+    (7, 2, 9, 4, '2026-07-11 15:30:00', '2026-08-10', NULL, 0, 'borrowed', 2);
+
+-- 8.7 更新读者当前借阅数量
+UPDATE reader SET current_borrowed = 3, total_borrowed = 4 WHERE id = 1;  -- 王同学: 借3本 + 还1本
+UPDATE reader SET current_borrowed = 3, total_borrowed = 3 WHERE id = 2;  -- 李华: 借3本
+
+-- 8.8 更新图书副本数量 (book_info 的 total_copies / available_copies 已在 8.3 中设好)
+-- 由于拷入数据库时 available_copies 是预设的静态值，此处无需再 UPDATE
+
+-- 8.9 罚款记录 (逾期罚款)
+-- 记录1: 王同学 三体 逾期 (rate=0.50/day, 9 days = 4.50)
+INSERT INTO fine_record (reader_id, borrow_record_id, fine_type, amount, paid, waive, operator_id, remark, create_time) VALUES
+    (1, 1, 'overdue', 4.50, 0, 0, 2, '三体逾期9天自动生成', DATE_SUB(NOW(), INTERVAL 2 DAY));
+-- 记录2: 李华 深入理解JVM 副本006 逾期 (教师 rate=0.00, 但演示用仍生成一条)
+INSERT INTO fine_record (reader_id, borrow_record_id, fine_type, amount, paid, waive, operator_id, remark, create_time) VALUES
+    (2, 5, 'overdue', 7.00, 0, 0, 2, '深入理解JVM逾期14天自动生成', DATE_SUB(NOW(), INTERVAL 5 DAY));
+
+SET FOREIGN_KEY_CHECKS = 1;

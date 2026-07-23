@@ -17,9 +17,9 @@ const saving = ref(false)
 const formError = ref('')
 
 const typeOptions = [
-  { value: 0, label: 'Directory' },
-  { value: 1, label: 'Menu' },
-  { value: 2, label: 'Button' },
+  { value: 0, label: '目录' },
+  { value: 1, label: '菜单' },
+  { value: 2, label: '按钮' },
 ]
 
 async function loadMenus() {
@@ -37,7 +37,7 @@ function openEdit(m: any) {
   formError.value = ''; showModal.value = true
 }
 async function submitForm() {
-  if (!form.value.name.trim()) { formError.value = 'Name is required'; return }
+  if (!form.value.name.trim()) { formError.value = '请输入名称'; return }
   saving.value = true; formError.value = ''
   try {
     if (modalMode.value === 'create') await createMenu(form.value)
@@ -46,8 +46,8 @@ async function submitForm() {
   } catch (err: any) { formError.value = err.message } finally { saving.value = false }
 }
 async function handleDelete(id: number) {
-  if (!confirm('Delete this menu item?')) return
-  try { await deleteMenu(id); loadMenus() } catch { alert('Delete failed') }
+  if (!confirm('确认删除此菜单项？')) return
+  try { await deleteMenu(id); loadMenus() } catch { alert('删除失败') }
 }
 
 function getTypeLabel(t: number) { return typeOptions.find(o => o.value === t)?.label || '-' }
@@ -69,22 +69,22 @@ onMounted(() => { loadMenus() })
   <div class="settings-page">
     <main class="main">
       <header class="header">
-        <div class="header-left"><button class="btn-back" @click="goBack">&#8592;</button><h1 class="header__title">Menu Management</h1></div>
-        <button class="btn-primary" @click="openCreate(0)">+ Add Menu</button>
+        <div class="header-left"><button class="btn-back" @click="goBack">&#8592;</button><h1 class="header__title">菜单管理</h1></div>
+        <button class="btn-primary" @click="openCreate(0)">+ 添加菜单</button>
       </header>
       <div class="table">
         <div class="table-head">
           <span class="th" style="width:60px">#</span>
-          <span class="th" style="width:220px">Name</span>
-          <span class="th" style="width:150px">Permission</span>
-          <span class="th" style="width:120px">Path</span>
-          <span class="th" style="width:60px">Type</span>
-          <span class="th" style="width:50px">Sort</span>
+          <span class="th" style="width:220px">名称</span>
+          <span class="th" style="width:150px">权限标识</span>
+          <span class="th" style="width:120px">路径</span>
+          <span class="th" style="width:60px">类型</span>
+          <span class="th" style="width:50px">排序</span>
           <span class="th-spacer"></span>
-          <span class="th th--right" style="width:120px">Actions</span>
+          <span class="th th--right" style="width:120px">操作</span>
         </div>
-        <div v-if="loading" class="table-empty">Loading...</div>
-        <div v-if="!loading && menus.length === 0" class="table-empty">No menus</div>
+        <div v-if="loading" class="table-empty">加载中...</div>
+        <div v-if="!loading && menus.length === 0" class="table-empty">暂无菜单</div>
         <div v-for="m in renderMenuTree(menus)" :key="m.id" class="table-row" :style="{ paddingLeft: 20 + m.depth * 24 + 'px' }">
           <span class="td td--mono td--muted" style="width:60px">{{ m.id }}</span>
           <span class="td td--title" style="width:220px">{{ m.name }}</span>
@@ -94,9 +94,9 @@ onMounted(() => { loadMenus() })
           <span class="td td--secondary" style="width:50px">{{ m.sort }}</span>
           <div class="td-spacer"></div>
           <div class="td td--actions" style="width:120px">
-            <button class="btn-sm btn-sm--edit" @click="openCreate(m.id)" v-if="m.type !== 2">+ Sub</button>
-            <button class="btn-sm btn-sm--edit" @click="openEdit(m)">Edit</button>
-            <button class="btn-sm btn-sm--del" @click="handleDelete(m.id)">Del</button>
+            <button class="btn-sm btn-sm--edit" @click="openCreate(m.id)" v-if="m.type !== 2">+ 子项</button>
+            <button class="btn-sm btn-sm--edit" @click="openEdit(m)">编辑</button>
+            <button class="btn-sm btn-sm--del" @click="handleDelete(m.id)">删除</button>
           </div>
         </div>
       </div>

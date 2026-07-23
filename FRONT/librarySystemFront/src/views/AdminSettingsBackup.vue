@@ -20,9 +20,9 @@ async function handleCreate() {
   creating.value = true; msg.value = ''
   try {
     const r = await createBackup()
-    msg.value = 'Backup created: ' + r.fileName + ' (' + r.fileSizeDisplay + ')'
+    msg.value = '备份已创建: ' + r.fileName + ' (' + r.fileSizeDisplay + ')'
     loadBackups()
-  } catch (err: any) { msg.value = err.message || 'Backup failed' } finally { creating.value = false }
+  } catch (err: any) { msg.value = err.message || '备份失败' } finally { creating.value = false }
 }
 
 onMounted(() => { loadBackups() })
@@ -32,26 +32,26 @@ onMounted(() => { loadBackups() })
   <div class="settings-page">
     <main class="main">
       <header class="header">
-        <div class="header-left"><button class="btn-back" @click="goBack">&#8592;</button><h1 class="header__title">Data Backup</h1></div>
+        <div class="header-left"><button class="btn-back" @click="goBack">&#8592;</button><h1 class="header__title">数据备份</h1></div>
       </header>
       <div class="backup-actions">
         <button class="btn-primary" :disabled="creating" @click="handleCreate">
-          <span v-if="creating" class="spinner"></span><span v-else>Backup Now</span>
+          <span v-if="creating" class="spinner"></span><span v-else>立即备份</span>
         </button>
         <div v-if="msg" :class="['backup-msg', { 'backup-msg--err': msg.includes('fail') }]">{{ msg }}</div>
       </div>
       <div class="table">
-        <div class="table-head"><span class="th" style="width:200px">File Name</span><span class="th" style="width:100px">Size</span><span class="th" style="width:100px">Type</span><span class="th" style="width:100px">Status</span><span class="th" style="width:160px">Created</span><span class="th-spacer"></span><span class="th th--right" style="width:120px">Actions</span></div>
-        <div v-if="loading" class="table-empty">Loading...</div>
-        <div v-if="!loading && backups.length === 0" class="table-empty">No backups yet</div>
+        <div class="table-head"><span class="th" style="width:200px">文件名</span><span class="th" style="width:100px">大小</span><span class="th" style="width:100px">类型</span><span class="th" style="width:100px">状态</span><span class="th" style="width:160px">创建时间</span><span class="th-spacer"></span><span class="th th--right" style="width:120px">操作</span></div>
+        <div v-if="loading" class="table-empty">加载中...</div>
+        <div v-if="!loading && backups.length === 0" class="table-empty">暂无备份</div>
         <div v-for="b in backups" :key="b.id" class="table-row">
           <span class="td td--mono td--title" style="width:200px">{{ b.fileName }}</span>
           <span class="td td--mono" style="width:100px">{{ b.fileSizeDisplay }}</span>
           <span class="td td--secondary" style="width:100px">{{ b.backupType }}</span>
-          <div class="td" style="width:100px"><span class="status-badge" :style="{background: b.backupStatus === 1 ? 'var(--success,#34D399)' : 'var(--warning,#FBBF24)'}">{{ b.backupStatus === 1 ? 'Success' : 'Pending' }}</span></div>
+          <div class="td" style="width:100px"><span class="status-badge" :style="{background: b.backupStatus === 1 ? 'var(--success,#34D399)' : 'var(--warning,#FBBF24)'}">{{ b.backupStatus === 1 ? '成功' : '进行中' }}</span></div>
           <span class="td td--muted" style="width:160px;font-size:11px">{{ b.createTime ? b.createTime.slice(0,19) : '-' }}</span>
           <div class="td-spacer"></div>
-          <div class="td td--actions" style="width:120px"><button class="btn-sm btn-sm--edit">Download</button></div>
+          <div class="td td--actions" style="width:120px"><button class="btn-sm btn-sm--edit">下载</button></div>
         </div>
       </div>
     </main>

@@ -202,10 +202,6 @@ onMounted(() => { loadBooks(); loadCategories() })
             <div class="adv-year-range"><input v-model="advSearch.yearStart" placeholder="2020" style="width:80px" /> ~ <input v-model="advSearch.yearEnd" placeholder="2026" style="width:80px" /></div>
           </div>
         </div>
-        <div class="adv-actions">
-          <button class="btn-sm btn-sm--edit" @click="onSearch">Search</button>
-          <button class="btn-sm btn-sm--del" @click="clearAdvSearch()">Clear</button>
-        </div>
       </div>
       <div class="table">
         <div class="table-head"><span class="th" style="width:48px">Cover</span><span class="th" style="width:220px">Title</span><span class="th" style="width:160px">Author</span><span class="th" style="width:180px">ISBN</span><span class="th" style="width:120px">Category</span><span class="th" style="width:70px">Copies</span><span class="th" style="width:100px">Status</span><span class="th-spacer"></span><span class="th th--right" style="width:100px">Actions</span></div>

@@ -16,6 +16,7 @@ const router = createRouter({
       children: [
         { path: '', name: 'AdminDashboard', component: () => import('../views/AdminDashboard.vue') },
         { path: 'books', name: 'AdminBooks', component: () => import('../views/AdminBooks.vue') },
+        { path: 'borrow-return', name: 'AdminBorrowReturn', component: () => import('../views/AdminBorrowReturn.vue') },
         { path: 'readers', name: 'AdminReaders', component: () => import('../views/AdminReaders.vue') },
         { path: 'statistics', name: 'AdminStatistics', component: () => import('../views/AdminStatistics.vue') },
         { path: 'settings', name: 'AdminSettings', component: () => import('../views/AdminSettings.vue') },

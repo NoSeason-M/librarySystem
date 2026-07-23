@@ -304,10 +304,6 @@ onMounted(() => {
           <div class="adv-field"><label>To</label><input v-model="advSearch.registerDateEnd" type="date" /></div>
           <div class="adv-field"></div>
         </div>
-        <div class="adv-actions">
-          <button class="btn-sm btn-sm--edit" @click="onSearch">Search</button>
-          <button class="btn-sm btn-sm--del" @click="clearAdvSearch()">Clear</button>
-        </div>
       </div>
       <div class="table">
         <div class="table-head">

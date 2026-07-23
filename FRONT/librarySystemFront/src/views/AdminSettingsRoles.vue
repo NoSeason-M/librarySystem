@@ -46,7 +46,7 @@ function openEdit(r: any) {
   formError.value = ''; showModal.value = true
 }
 async function submitForm() {
-  if (!form.value.name.trim() || !form.value.code.trim()) { formError.value = 'Name and Code are required'; return }
+  if (!form.value.name.trim() || !form.value.code.trim()) { formError.value = '名称和编码不能为空'; return }
   saving.value = true; formError.value = ''
   try {
     if (modalMode.value === 'create') await createRole(form.value)
@@ -55,8 +55,8 @@ async function submitForm() {
   } catch (err: any) { formError.value = err.message } finally { saving.value = false }
 }
 async function handleDelete(id: number) {
-  if (!confirm('Delete this role?')) return
-  try { await deleteRole(id); loadRoles() } catch { alert('Delete failed') }
+  if (!confirm('确认删除此角色？')) return
+  try { await deleteRole(id); loadRoles() } catch { alert('删除失败') }
 }
 
 function toggleMenu(mid: number) {
@@ -80,11 +80,11 @@ onMounted(() => { loadRoles(); loadMenus() })
 <template>
   <div class="settings-page">
     <main class="main">
-      <header class="header"><div class="header-left"><button class="btn-back" @click="goBack">←</button><h1 class="header__title">Role Management</h1></div><button class="btn-primary" @click="openCreate">+ Create Role</button></header>
+      <header class="header"><div class="header-left"><button class="btn-back" @click="goBack">←</button><h1 class="header__title">角色管理</h1></div><button class="btn-primary" @click="openCreate">+ 创建角色</button></header>
       <div class="table">
-        <div class="table-head"><span class="th" style="width:80px">ID</span><span class="th" style="width:150px">Name</span><span class="th" style="width:180px">Code</span><span class="th" style="width:220px">Description</span><span class="th" style="width:60px">Sort</span><span class="th-spacer"></span><span class="th th--right" style="width:120px">Actions</span></div>
-        <div v-if="loading" class="table-empty">Loading...</div>
-        <div v-if="!loading && roles.length === 0" class="table-empty">No roles found</div>
+        <div class="table-head"><span class="th" style="width:80px">ID</span><span class="th" style="width:150px">名称</span><span class="th" style="width:180px">编码</span><span class="th" style="width:220px">描述</span><span class="th" style="width:60px">排序</span><span class="th-spacer"></span><span class="th th--right" style="width:120px">操作</span></div>
+        <div v-if="loading" class="table-empty">加载中...</div>
+        <div v-if="!loading && roles.length === 0" class="table-empty">暂无角色</div>
         <div v-for="r in roles" :key="r.id" class="table-row">
           <span class="td td--mono td--muted" style="width:80px">{{ r.id }}</span>
           <span class="td td--title" style="width:150px">{{ r.name }}</span>
@@ -93,8 +93,8 @@ onMounted(() => { loadRoles(); loadMenus() })
           <span class="td td--secondary" style="width:60px">{{ r.sort }}</span>
           <div class="td-spacer"></div>
           <div class="td td--actions" style="width:120px">
-            <button class="btn-sm btn-sm--edit" @click="openEdit(r)">Edit</button>
-            <button class="btn-sm btn-sm--del" @click="handleDelete(r.id)" v-if="r.code !== 'ROLE_ADMIN'">Delete</button>
+            <button class="btn-sm btn-sm--edit" @click="openEdit(r)">编辑</button>
+            <button class="btn-sm btn-sm--del" @click="handleDelete(r.id)" v-if="r.code !== 'ROLE_ADMIN'">删除</button>
           </div>
         </div>
       </div>
@@ -102,16 +102,16 @@ onMounted(() => { loadRoles(); loadMenus() })
 
     <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
       <div class="modal modal--lg">
-        <div class="modal__header"><h2 class="modal__title">{{ modalMode === 'create' ? 'Create Role' : 'Edit Role' }}</h2><button class="modal__close" @click="showModal = false">✕</button></div>
+        <div class="modal__header"><h2 class="modal__title">{{ modalMode === 'create' ? '创建角色' : '编辑角色' }}</h2><button class="modal__close" @click="showModal = false">✕</button></div>
         <div v-if="formError" class="modal__error">{{ formError }}</div>
         <div class="modal__body">
           <div class="form-row-2">
-            <div class="field"><label class="field-label">Name *</label><div class="input-box"><input v-model="form.name" type="text" placeholder="e.g. 阅览室管理员" /></div></div>
-            <div class="field"><label class="field-label">Code *</label><div class="input-box"><input v-model="form.code" type="text" placeholder="e.g. ROLE_READING_ROOM" /></div></div>
+            <div class="field"><label class="field-label">名称 *</label><div class="input-box"><input v-model="form.name" type="text" placeholder="例如: 阅览室管理员" /></div></div>
+            <div class="field"><label class="field-label">编码 *</label><div class="input-box"><input v-model="form.code" type="text" placeholder="例如: ROLE_READING_ROOM" /></div></div>
           </div>
-          <div class="field"><label class="field-label">Description</label><div class="input-box"><input v-model="form.description" type="text" placeholder="Role description" /></div></div>
-          <div class="field"><label class="field-label">Permissions <span style="font-size:11px;color:var(--text-muted,#888);font-weight:400">(select menus and buttons)</span></label>
-            <div class="permission-actions"><button class="btn-link" @click="selectAll">Select All</button><button class="btn-link" @click="deselectAll">Deselect All</button></div>
+          <div class="field"><label class="field-label">描述</label><div class="input-box"><input v-model="form.description" type="text" placeholder="角色描述" /></div></div>
+          <div class="field"><label class="field-label">权限 <span style="font-size:11px;color:var(--text-muted,#888);font-weight:400">（选择菜单和按钮）</span></label>
+            <div class="permission-actions"><button class="btn-link" @click="selectAll">全选</button><button class="btn-link" @click="deselectAll">取消全选</button></div>
             <div class="menu-tree">
               <div v-for="m in menus" :key="m.id" class="menu-node">
                 <label class="menu-checkbox"><input type="checkbox" :checked="form.menuIds.includes(m.id)" @change="toggleMenu(m.id)" /><span :style="{fontWeight:600}">{{ m.name }}</span><span v-if="m.permission" class="menu-perm">{{ m.permission }}</span></label>
@@ -129,7 +129,7 @@ onMounted(() => { loadRoles(); loadMenus() })
             </div>
           </div>
         </div>
-        <div class="modal__footer"><button class="btn-cancel" @click="showModal = false">Cancel</button><button class="btn-primary" :disabled="saving" @click="submitForm"><span v-if="saving" class="spinner"></span><span v-else>Save</span></button></div>
+        <div class="modal__footer"><button class="btn-cancel" @click="showModal = false">取消</button><button class="btn-primary" :disabled="saving" @click="submitForm"><span v-if="saving" class="spinner"></span><span v-else>保存</span></button></div>
       </div>
     </div>
   </div>
@@ -192,13 +192,36 @@ onMounted(() => { loadRoles(); loadMenus() })
 .permission-actions { display: flex; gap: 12px; margin-bottom: 4px; }
 .btn-link { background: none; border: none; cursor: pointer; font-family: var(--font-sans,Inter); font-size: 12px; color: var(--accent,#4A9FD8); padding: 0; }
 .btn-link:hover { text-decoration: underline; }
-.menu-tree { max-height: 320px; overflow-y: auto; padding: 8px; background: var(--bg-secondary,#F7F8FA); border-radius: 10px; display: flex; flex-direction: column; gap: 4px; }
-.menu-node { display: flex; flex-direction: column; gap: 2px; }
-.menu-node--child { padding-left: 24px; }
-.menu-node--btn { padding-left: 48px; }
-.menu-checkbox { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary,#666); cursor: pointer; padding: 3px 0; }
+.menu-tree {
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 4px 0;
+  background: var(--bg-secondary,#F7F8FA);
+  border-radius: 10px;
+}
+.menu-node { display: flex; flex-direction: column; }
+.menu-node--child { padding-left: 32px; }
+.menu-node--btn { padding-left: 64px; }
+.menu-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--text-secondary,#666);
+  cursor: pointer;
+  transition: background 0.1s;
+  white-space: nowrap;
+  width: 100%;
+}
+.menu-checkbox:hover { background: var(--accent-light,#E8F4FD); }
 .menu-checkbox input[type="checkbox"] { accent-color: var(--accent,#4A9FD8); }
-.menu-perm { font-family: var(--font-mono,'Geist Mono',monospace); font-size: 10px; color: var(--text-muted,#888); margin-left: 4px; }
+.menu-perm {
+  font-family: var(--font-mono,'Geist Mono',monospace);
+  font-size: 10px;
+  color: var(--text-muted,#888);
+  margin-left: 12px;
+}
 .menu-btn-name { color: var(--text-muted,#888); }
 .spinner { width: 16px; height: 16px; border: 2px solid var(--text-inverse,#FFF); border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

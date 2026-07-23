@@ -42,18 +42,18 @@ onMounted(() => { loadLogs() })
 <template>
   <div class="settings-page">
     <main class="main">
-      <header class="header"><div class="header-left"><button class="btn-back" @click="goBack">←</button><h1 class="header__title">Operation Logs</h1></div></header>
+      <header class="header"><div class="header-left"><button class="btn-back" @click="goBack">←</button><h1 class="header__title">操作日志</h1></div></header>
       <div class="toolbar">
-        <div class="search-box"><span class="search-icon">🔍</span><input v-model="keyword" placeholder="Search username..." @keyup.enter="onSearch" /></div>
+        <div class="search-box"><span class="search-icon">🔍</span><input v-model="keyword" placeholder="搜索用户名..." @keyup.enter="onSearch" /></div>
         <select v-model="moduleFilter" class="filter-select" @change="onSearch">
-          <option value="">All Modules</option>
+          <option value="">所有模块</option>
           <option v-for="m in modules.filter(Boolean)" :key="m" :value="m">{{ m }}</option>
         </select>
       </div>
       <div class="table">
-        <div class="table-head"><span class="th" style="width:80px">ID</span><span class="th" style="width:100px">Username</span><span class="th" style="width:200px">Operation</span><span class="th" style="width:80px">Module</span><span class="th" style="width:100px">IP</span><span class="th" style="width:60px">Method</span><span class="th" style="width:60px">Result</span><span class="th" style="width:50px">ms</span><span class="th" style="width:160px">Time</span></div>
-        <div v-if="loading" class="table-empty">Loading...</div>
-        <div v-if="!loading && logs.length === 0" class="table-empty">No logs found</div>
+        <div class="table-head"><span class="th" style="width:80px">ID</span><span class="th" style="width:100px">用户名</span><span class="th" style="width:200px">操作</span><span class="th" style="width:80px">模块</span><span class="th" style="width:100px">IP</span><span class="th" style="width:60px">方法</span><span class="th" style="width:60px">结果</span><span class="th" style="width:50px">耗时</span><span class="th" style="width:160px">时间</span></div>
+        <div v-if="loading" class="table-empty">加载中...</div>
+        <div v-if="!loading && logs.length === 0" class="table-empty">暂无日志</div>
         <div v-for="log in logs" :key="log.id" class="table-row">
           <span class="td td--mono td--muted" style="width:80px">{{ log.id }}</span>
           <span class="td td--title" style="width:100px">{{ log.username }}</span>
@@ -67,7 +67,7 @@ onMounted(() => { loadLogs() })
         </div>
       </div>
       <div class="pagination">
-        <span class="page-info">Showing {{ logs.length }} of {{ total }} results</span>
+        <span class="page-info">共 {{ total }} 条，显示 {{ logs.length }} 条</span>
         <div class="page-buttons">
           <span :class="['page-prev',{'page--disabled':currentPage<=1}]" @click="currentPage>1&&(currentPage--,loadLogs())">←</span>
           <template v-for="p in visiblePages" :key="p"><div v-if="typeof p==='number'" :class="['page-num',{'page-num--active':p===currentPage}]" @click="currentPage=p;loadLogs()">{{ p }}</div><span v-else class="page-ellipsis">...</span></template>

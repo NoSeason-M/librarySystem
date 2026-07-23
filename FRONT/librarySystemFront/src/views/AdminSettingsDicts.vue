@@ -44,7 +44,7 @@ function openEditItem(item: any) {
   itemError.value = ''; showItemModal.value = true
 }
 async function submitItem() {
-  if (!itemForm.value.itemLabel.trim() || !itemForm.value.itemValue.trim()) { itemError.value = 'Label and value are required'; return }
+  if (!itemForm.value.itemLabel.trim() || !itemForm.value.itemValue.trim()) { itemError.value = '标签和值不能为空'; return }
   itemSaving.value = true; itemError.value = ''
   try {
     if (editItemId.value === 0) await createDictItem({ ...itemForm.value, dictCode: selectedDict.value.dictCode })
@@ -53,8 +53,8 @@ async function submitItem() {
   } catch (err: any) { itemError.value = err.message } finally { itemSaving.value = false }
 }
 async function handleDeleteItem(id: number) {
-  if (!confirm('Delete this item?')) return
-  try { await deleteDictItem(id); selectDict(selectedDict.value) } catch { alert('Delete failed') }
+  if (!confirm('确认删除此项？')) return
+  try { await deleteDictItem(id); selectDict(selectedDict.value) } catch { alert('删除失败') }
 }
 onMounted(() => { loadDicts() })
 </script>
@@ -62,30 +62,30 @@ onMounted(() => { loadDicts() })
 <template>
   <div class="settings-page">
     <main class="main">
-      <header class="header"><div class="header-left"><button class="btn-back" @click="goBack">←</button><h1 class="header__title">Data Dictionary</h1></div></header>
+      <header class="header"><div class="header-left"><button class="btn-back" @click="goBack">←</button><h1 class="header__title">数据字典</h1></div></header>
       <div class="dict-layout">
         <div class="dict-list">
-          <div v-if="loading" class="table-empty">Loading...</div>
+          <div v-if="loading" class="table-empty">加载中...</div>
           <div v-for="d in dicts" :key="d.id" :class="['dict-card', { 'dict-card--active': selectedDict?.id === d.id }]" @click="selectDict(d)">
             <span class="dict-name">{{ d.dictName }}</span>
             <span class="dict-code">{{ d.dictCode }}</span>
           </div>
         </div>
         <div class="dict-items">
-          <div v-if="!selectedDict" class="table-empty">Select a dictionary from the left</div>
+          <div v-if="!selectedDict" class="table-empty">请从左侧选择一个字典</div>
           <template v-else>
-            <div class="dict-header"><h2 class="dict-title">{{ selectedDict.dictName }} <span class="dict-code-inline">({{ selectedDict.dictCode }})</span></h2><button class="btn-primary btn-sm--text" @click="openCreateItem">+ Add Item</button></div>
+            <div class="dict-header"><h2 class="dict-title">{{ selectedDict.dictName }} <span class="dict-code-inline">({{ selectedDict.dictCode }})</span></h2><button class="btn-primary btn-sm--text" @click="openCreateItem">+ 添加项</button></div>
             <div class="table">
-              <div class="table-head"><span class="th" style="width:60px">ID</span><span class="th" style="width:140px">Label</span><span class="th" style="width:140px">Value</span><span class="th" style="width:60px">Sort</span><span class="th" style="width:60px">Default</span><span class="th-spacer"></span><span class="th th--right" style="width:120px">Actions</span></div>
-              <div v-if="items.length === 0" class="table-empty">No items</div>
+              <div class="table-head"><span class="th" style="width:60px">ID</span><span class="th" style="width:140px">标签</span><span class="th" style="width:140px">值</span><span class="th" style="width:60px">排序</span><span class="th" style="width:60px">默认</span><span class="th-spacer"></span><span class="th th--right" style="width:120px">操作</span></div>
+              <div v-if="items.length === 0" class="table-empty">暂无数据</div>
               <div v-for="item in items" :key="item.id" class="table-row">
                 <span class="td td--mono td--muted" style="width:60px">{{ item.id }}</span>
                 <span class="td td--title" style="width:140px">{{ item.itemLabel }}</span>
                 <span class="td td--mono" style="width:140px">{{ item.itemValue }}</span>
                 <span class="td td--secondary" style="width:60px">{{ item.sort }}</span>
-                <span class="td td--secondary" style="width:60px"><span v-if="item.defaultFlag" class="status-badge" style="background:var(--accent,#4A9FD8);padding:2px 8px;border-radius:999px;font-size:10px;color:#FFF">Default</span></span>
+                <span class="td td--secondary" style="width:60px"><span v-if="item.defaultFlag" class="status-badge" style="background:var(--accent,#4A9FD8);padding:2px 8px;border-radius:999px;font-size:10px;color:#FFF">默认</span></span>
                 <div class="td-spacer"></div>
-                <div class="td td--actions" style="width:120px"><button class="btn-sm btn-sm--edit" @click="openEditItem(item)">Edit</button><button class="btn-sm btn-sm--del" @click="handleDeleteItem(item.id)">Delete</button></div>
+                <div class="td td--actions" style="width:120px"><button class="btn-sm btn-sm--edit" @click="openEditItem(item)">编辑</button><button class="btn-sm btn-sm--del" @click="handleDeleteItem(item.id)">删除</button></div>
               </div>
             </div>
           </template>
@@ -95,16 +95,16 @@ onMounted(() => { loadDicts() })
 
     <div v-if="showItemModal" class="modal-overlay" @click.self="showItemModal = false">
       <div class="modal">
-        <div class="modal__header"><h2 class="modal__title">{{ editItemId === 0 ? 'Add' : 'Edit' }} Dictionary Item</h2><button class="modal__close" @click="showItemModal = false">✕</button></div>
+        <div class="modal__header"><h2 class="modal__title">{{ editItemId === 0 ? '添加' : '编辑' }}字典项</h2><button class="modal__close" @click="showItemModal = false">✕</button></div>
         <div v-if="itemError" class="modal__error">{{ itemError }}</div>
         <div class="modal__body">
           <div class="form-row-2">
-            <div class="field"><label class="field-label">Label *</label><div class="input-box"><input v-model="itemForm.itemLabel" type="text" placeholder="Display label" /></div></div>
-            <div class="field"><label class="field-label">Value *</label><div class="input-box"><input v-model="itemForm.itemValue" type="text" placeholder="Actual value" /></div></div>
+            <div class="field"><label class="field-label">标签 *</label><div class="input-box"><input v-model="itemForm.itemLabel" type="text" placeholder="显示标签" /></div></div>
+            <div class="field"><label class="field-label">值 *</label><div class="input-box"><input v-model="itemForm.itemValue" type="text" placeholder="实际值" /></div></div>
           </div>
-          <div class="field"><label class="field-label">Sort</label><div class="input-box"><input v-model.number="itemForm.sort" type="number" placeholder="0" /></div></div>
+          <div class="field"><label class="field-label">排序</label><div class="input-box"><input v-model.number="itemForm.sort" type="number" placeholder="0" /></div></div>
         </div>
-        <div class="modal__footer"><button class="btn-cancel" @click="showItemModal = false">Cancel</button><button class="btn-primary" :disabled="itemSaving" @click="submitItem"><span v-if="itemSaving" class="spinner"></span><span v-else>Save</span></button></div>
+        <div class="modal__footer"><button class="btn-cancel" @click="showItemModal = false">取消</button><button class="btn-primary" :disabled="itemSaving" @click="submitItem"><span v-if="itemSaving" class="spinner"></span><span v-else>保存</span></button></div>
       </div>
     </div>
   </div>

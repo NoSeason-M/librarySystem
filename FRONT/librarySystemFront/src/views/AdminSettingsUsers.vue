@@ -74,22 +74,22 @@ function openEdit(u: any) {
 function openDetail(u: any) { detailUser.value = u; showDetail.value = true }
 
 async function submitForm() {
-  if (!form.value.realName.trim()) { formError.value = 'Name is required'; return }
+  if (!form.value.realName.trim()) { formError.value = '请输入姓名'; return }
   saving.value = true; formError.value = ''
   try {
     if (modalMode.value === 'create') {
-      if (!form.value.username.trim()) { formError.value = 'Username is required'; saving.value = false; return }
+      if (!form.value.username.trim()) { formError.value = '请输入用户名'; saving.value = false; return }
       await createUser(form.value)
     } else {
       await updateUser(editId.value, form.value)
     }
     showModal.value = false; loadUsers()
-  } catch (err: any) { formError.value = err.message || 'Operation failed' } finally { saving.value = false }
+  } catch (err: any) { formError.value = err.message || '操作失败' } finally { saving.value = false }
 }
 
 async function handleResetPwd(id: number) {
-  if (!confirm('Reset password to 123456?')) return
-  try { await resetPassword(id); alert('Password reset to 123456') } catch { alert('Failed') }
+  if (!confirm('确认重置密码为 123456？')) return
+  try { await resetPassword(id); alert('密码已重置为 123456') } catch { alert('重置失败') }
 }
 
 function toggleRole(rid: number) {
@@ -108,18 +108,18 @@ onMounted(() => { loadUsers(); loadRoles() })
 
     <main class="main">
       <header class="header">
-        <div class="header-left"><button class="btn-back" @click="goBack">←</button><h1 class="header__title">User Management</h1></div>
-        <button class="btn-primary" @click="openCreate">+ Create User</button>
+        <div class="header-left"><button class="btn-back" @click="goBack">←</button><h1 class="header__title">用户管理</h1></div>
+        <button class="btn-primary" @click="openCreate">+ 创建用户</button>
       </header>
 
       <div class="toolbar">
-        <div class="search-box"><span class="search-icon">🔍</span><input v-model="keyword" class="search-input" placeholder="Search username or name..." @keyup.enter="currentPage=1;loadUsers()" /></div>
+        <div class="search-box"><span class="search-icon">🔍</span><input v-model="keyword" class="search-input" placeholder="搜索用户名或姓名..." @keyup.enter="currentPage=1;loadUsers()" /></div>
       </div>
 
       <div class="table">
-        <div class="table-head"><span class="th" style="width:60px">ID</span><span class="th" style="width:120px">Username</span><span class="th" style="width:120px">Real Name</span><span class="th" style="width:180px">Email</span><span class="th" style="width:120px">Phone</span><span class="th" style="width:200px">Roles</span><span class="th" style="width:80px">Status</span><span class="th-spacer"></span><span class="th th--right" style="width:160px">Actions</span></div>
-        <div v-if="loading" class="table-empty">Loading...</div>
-        <div v-if="!loading && users.length === 0" class="table-empty">No users found</div>
+        <div class="table-head"><span class="th" style="width:60px">ID</span><span class="th" style="width:120px">用户名</span><span class="th" style="width:120px">姓名</span><span class="th" style="width:180px">邮箱</span><span class="th" style="width:120px">电话</span><span class="th" style="width:200px">角色</span><span class="th" style="width:80px">状态</span><span class="th-spacer"></span><span class="th th--right" style="width:160px">操作</span></div>
+        <div v-if="loading" class="table-empty">加载中...</div>
+        <div v-if="!loading && users.length === 0" class="table-empty">暂无用户</div>
         <div v-for="u in users" :key="u.id" class="table-row">
           <span class="td td--mono td--muted" style="width:60px">{{ u.id }}</span>
           <span class="td td--title" style="width:120px">{{ u.username }}</span>
@@ -127,17 +127,17 @@ onMounted(() => { loadUsers(); loadRoles() })
           <span class="td td--secondary" style="width:180px">{{ u.email || '—' }}</span>
           <span class="td td--secondary" style="width:120px">{{ u.phone || '—' }}</span>
           <span class="td td--secondary" style="width:200px">{{ (u.roleNames || []).join(', ') || '—' }}</span>
-          <div class="td" style="width:80px"><span class="status-badge" :style="{ background: u.status === 1 ? 'var(--success,#34D399)' : 'var(--danger,#F87171)' }">{{ u.status === 1 ? 'Active' : 'Disabled' }}</span></div>
+          <div class="td" style="width:80px"><span class="status-badge" :style="{ background: u.status === 1 ? 'var(--success,#34D399)' : 'var(--danger,#F87171)' }">{{ u.status === 1 ? '启用' : '禁用' }}</span></div>
           <div class="td-spacer"></div>
           <div class="td td--actions" style="width:160px">
-            <button class="btn-sm btn-sm--edit" @click="openEdit(u)">Edit</button>
-            <button class="btn-sm btn-sm--card" @click="handleResetPwd(u.id)">Reset Pwd</button>
+            <button class="btn-sm btn-sm--edit" @click="openEdit(u)">编辑</button>
+            <button class="btn-sm btn-sm--card" @click="handleResetPwd(u.id)">重置密码</button>
           </div>
         </div>
       </div>
 
       <div class="pagination">
-        <span class="page-info">Showing {{ users.length }} of {{ total }} results</span>
+        <span class="page-info">共 {{ total }} 条，显示 {{ users.length }} 条</span>
         <div class="page-buttons">
           <span :class="['page-prev',{ 'page--disabled': currentPage <= 1 }]" @click="currentPage > 1 && (currentPage--,loadUsers())">←</span>
           <template v-for="p in visiblePages" :key="p"><div v-if="typeof p === 'number'" :class="['page-num',{ 'page-num--active': p === currentPage }]" @click="currentPage=p;loadUsers()">{{ p }}</div><span v-else class="page-ellipsis">...</span></template>
@@ -149,21 +149,21 @@ onMounted(() => { loadUsers(); loadRoles() })
     <!-- Create/Edit Modal -->
     <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
       <div class="modal">
-        <div class="modal__header"><h2 class="modal__title">{{ modalMode === 'create' ? 'Create User' : 'Edit User' }}</h2><button class="modal__close" @click="showModal = false">✕</button></div>
+        <div class="modal__header"><h2 class="modal__title">{{ modalMode === 'create' ? '创建用户' : '编辑用户' }}</h2><button class="modal__close" @click="showModal = false">✕</button></div>
         <div v-if="formError" class="modal__error">{{ formError }}</div>
         <div class="modal__body">
           <div class="form-row-2">
-            <div class="field"><label class="field-label">Username *</label><div class="input-box"><input v-model="form.username" type="text" placeholder="login username" :disabled="modalMode === 'edit'" /></div></div>
-            <div class="field"><label class="field-label">Real Name *</label><div class="input-box"><input v-model="form.realName" type="text" placeholder="full name" /></div></div>
+            <div class="field"><label class="field-label">用户名 *</label><div class="input-box"><input v-model="form.username" type="text" placeholder="登录用户名" :disabled="modalMode === 'edit'" /></div></div>
+            <div class="field"><label class="field-label">姓名 *</label><div class="input-box"><input v-model="form.realName" type="text" placeholder="真实姓名" /></div></div>
           </div>
           <div class="form-row-2">
-            <div class="field"><label class="field-label">Email</label><div class="input-box"><input v-model="form.email" type="email" placeholder="email" /></div></div>
-            <div class="field"><label class="field-label">Phone</label><div class="input-box"><input v-model="form.phone" type="tel" placeholder="phone" /></div></div>
+            <div class="field"><label class="field-label">邮箱</label><div class="input-box"><input v-model="form.email" type="email" placeholder="电子邮箱" /></div></div>
+            <div class="field"><label class="field-label">电话</label><div class="input-box"><input v-model="form.phone" type="tel" placeholder="手机号" /></div></div>
           </div>
-          <div v-if="modalMode === 'create'" class="field"><label class="field-label">Initial Password</label><div class="input-box"><input v-model="form.password" type="text" placeholder="default: 123456" /></div></div>
-          <div class="field"><label class="field-label">Roles</label><div class="role-checkboxes"><label v-for="r in roles" :key="r.id" class="role-checkbox"><input type="checkbox" :checked="form.roleIds.includes(r.id)" @change="toggleRole(r.id)" /><span>{{ r.name }} ({{ r.code }})</span></label></div></div>
+          <div v-if="modalMode === 'create'" class="field"><label class="field-label">初始密码</label><div class="input-box"><input v-model="form.password" type="text" placeholder="默认: 123456" /></div></div>
+          <div class="field"><label class="field-label">角色</label><div class="role-checkboxes"><label v-for="r in roles" :key="r.id" class="role-checkbox"><input type="checkbox" :checked="form.roleIds.includes(r.id)" @change="toggleRole(r.id)" /><span>{{ r.name }}</span></label></div></div>
         </div>
-        <div class="modal__footer"><button class="btn-cancel" @click="showModal = false">Cancel</button><button class="btn-primary" :disabled="saving" @click="submitForm"><span v-if="saving" class="spinner"></span><span v-else>{{ modalMode === 'create' ? 'Create' : 'Save' }}</span></button></div>
+        <div class="modal__footer"><button class="btn-cancel" @click="showModal = false">取消</button><button class="btn-primary" :disabled="saving" @click="submitForm"><span v-if="saving" class="spinner"></span><span v-else>{{ modalMode === 'create' ? '创建' : '保存' }}</span></button></div>
       </div>
     </div>
   </div>
@@ -230,7 +230,7 @@ onMounted(() => { loadUsers(); loadRoles() })
 .page-ellipsis { font-size: 12px; color: var(--text-muted,#888); padding: 0 4px; }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
-.modal { width: 100%; max-width: 520px; background: var(--bg-primary,#FFF); border-radius: var(--card-radius,16px); display: flex; flex-direction: column; max-height: 90vh; overflow-y: auto; }
+.modal { width: 100%; max-width: 560px; background: var(--bg-primary,#FFF); border-radius: var(--card-radius,16px); display: flex; flex-direction: column; max-height: 90vh; overflow-y: auto; }
 .modal__header { display: flex; justify-content: space-between; align-items: center; padding: 24px 28px 0; }
 .modal__title { font-family: var(--font-sans,Inter); font-size: 20px; font-weight: 600; color: var(--text-primary,#1A1A1A); margin: 0; }
 .modal__close { width: 32px; height: 32px; border-radius: 8px; background: var(--bg-secondary,#F7F8FA); border: none; font-size: 14px; color: var(--text-muted,#888); cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -246,8 +246,35 @@ onMounted(() => { loadUsers(); loadRoles() })
 .input-box input { width: 100%; background: transparent; border: none; outline: none; font-family: var(--font-sans,Inter); font-size: 13px; color: var(--text-primary,#1A1A1A); }
 .input-box input::placeholder { color: var(--text-muted,#888); }
 .form-row-2 { display: flex; gap: 12px; }
-.role-checkboxes { display: flex; flex-wrap: wrap; gap: 10px; padding: 8px 0; }
-.role-checkbox { display: flex; align-items: center; gap: 6px; font-family: var(--font-sans,Inter); font-size: 13px; color: var(--text-secondary,#666); cursor: pointer; }
+.role-checkboxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px 0;
+}
+.role-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border, #E5E7EB);
+  background: var(--bg-primary, #FFF);
+  font-family: var(--font-sans,Inter);
+  font-size: 13px;
+  color: var(--text-secondary,#666);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  width: 100%;
+}
+.role-checkbox:hover {
+  border-color: var(--accent, #4A9FD8);
+  background: var(--accent-light, #E8F4FD);
+}
+.role-checkbox:has(input:checked) {
+  border-color: var(--accent, #4A9FD8);
+  background: var(--accent-light, #E8F4FD);
+}
 .role-checkbox input[type="checkbox"] { accent-color: var(--accent,#4A9FD8); }
 .spinner { width: 16px; height: 16px; border: 2px solid var(--text-inverse,#FFF); border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

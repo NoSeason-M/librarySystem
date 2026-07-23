@@ -15,14 +15,14 @@ const adminNav = [
 ]
 
 const settingsCards = [
-  { icon: 'U', title: 'User Management', desc: 'Create, edit and manage system users', color: '#4A9FD8', route: '/admin/settings/users', tags: ['Create', 'Edit', 'Enable'] },
-  { icon: 'R', title: 'Role Management', desc: 'Configure roles and permission trees', color: '#FBBF24', route: '/admin/settings/roles', tags: ['Create', 'Permissions'] },
-  { icon: 'M', title: 'Menu Management', desc: 'Manage navigation menus and permissions', color: '#4A9FD8', route: '/admin/settings/menus', tags: ['Add', 'Edit', 'Tree'] },
-  { icon: 'C', title: 'System Config', desc: 'Configure borrowing rules and system settings', color: '#888888', route: '/admin/settings/config', tags: ['Edit Config'] },
-  { icon: 'D', title: 'Data Dictionary', desc: 'Manage dictionary entries and classifications', color: '#34D399', route: '/admin/settings/dicts', tags: ['Add', 'Edit'] },
-  { icon: 'L', title: 'Operation Logs', desc: 'View system audit trail (append-only)', color: '#F87171', route: '/admin/settings/logs', tags: ['View', 'Filter'] },
-  { icon: 'A', title: 'Announcements', desc: 'Publish announcements and notifications', color: '#FBBF24', route: '/admin/settings/announcements', tags: ['Create', 'Publish', 'Pin'] },
-  { icon: 'B', title: 'Data Backup', desc: 'Manual backup, download and restore', color: '#4A9FD8', route: '/admin/settings/backup', tags: ['Backup Now', 'Download'] },
+  { icon: 'U', title: '用户管理', desc: '创建、编辑和管理系统用户', color: '#4A9FD8', route: '/admin/settings/users', tags: ['创建', '编辑', '启用'] },
+  { icon: 'R', title: '角色管理', desc: '配置角色和权限树', color: '#FBBF24', route: '/admin/settings/roles', tags: ['创建', '权限'] },
+  { icon: 'M', title: '菜单管理', desc: '管理导航菜单和权限点', color: '#4A9FD8', route: '/admin/settings/menus', tags: ['添加', '编辑', '树形'] },
+  { icon: 'C', title: '系统参数', desc: '配置借阅规则和系统设置', color: '#888888', route: '/admin/settings/config', tags: ['编辑参数'] },
+  { icon: 'D', title: '数据字典', desc: '管理字典条目和分类', color: '#34D399', route: '/admin/settings/dicts', tags: ['添加', '编辑'] },
+  { icon: 'L', title: '操作日志', desc: '查看系统审计轨迹（只追加）', color: '#F87171', route: '/admin/settings/logs', tags: ['查看', '筛选'] },
+  { icon: 'A', title: '公告管理', desc: '发布公告和通知', color: '#FBBF24', route: '/admin/settings/announcements', tags: ['创建', '发布', '置顶'] },
+  { icon: 'B', title: '数据备份', desc: '手动备份、下载和恢复', color: '#4A9FD8', route: '/admin/settings/backup', tags: ['立即备份', '下载'] },
 ]
 
 function navigateTo(label: string) {
@@ -42,7 +42,7 @@ function goTo(card: any) {
 
     <main class="main">
       <header class="header">
-        <h1 class="header__title">Settings</h1>
+        <h1 class="header__title">系统设置</h1>
       </header>
 
       <div class="card-grid">

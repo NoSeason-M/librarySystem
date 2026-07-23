@@ -29,17 +29,17 @@ async function loadList() {
 function openCreate() { modalMode.value = 'create'; editId.value = 0; form.value = { title: '', content: '', type: 'general', targetRoles: 'all', topFlag: 0, status: 0 }; formError.value = ''; showModal.value = true }
 function openEdit(a: any) { modalMode.value = 'edit'; editId.value = a.id; form.value = { title: a.title, content: a.content, type: a.type, targetRoles: a.targetRoles, topFlag: a.topFlag || 0, status: a.status }; formError.value = ''; showModal.value = true }
 async function submitForm() {
-  if (!form.value.title.trim() || !form.value.content.trim()) { formError.value = 'Title and content are required'; return }
+  if (!form.value.title.trim() || !form.value.content.trim()) { formError.value = '标题和内容不能为空'; return }
   saving.value = true; formError.value = ''
   try { if (modalMode.value === 'create') await createAnnouncement(form.value); else await updateAnnouncement(editId.value, form.value); showModal.value = false; loadList() }
   catch (err: any) { formError.value = err.message } finally { saving.value = false }
 }
-async function handleDelete(id: number) { if (!confirm('Delete this announcement?')) return; try { await deleteAnnouncement(id); loadList() } catch { alert('Delete failed') } }
-async function publishItem(a: any) { try { await updateAnnouncement(a.id, { status: 1 }); loadList() } catch { alert('Publish failed') } }
+async function handleDelete(id: number) { if (!confirm('确认删除此公告？')) return; try { await deleteAnnouncement(id); loadList() } catch { alert('删除失败') } }
+async function publishItem(a: any) { try { await updateAnnouncement(a.id, { status: 1 }); loadList() } catch { alert('发布失败') } }
 
-function getStatusLabel(s: number) { return s === 1 ? 'Published' : s === 0 ? 'Draft' : 'Archived' }
+function getStatusLabel(s: number) { return s === 1 ? '已发布' : s === 0 ? '草稿' : '已归档' }
 function getStatusColor(s: number) { return s === 1 ? 'var(--success,#34D399)' : s === 0 ? 'var(--text-muted,#888)' : 'var(--danger,#F87171)' }
-function getTypeLabel(t: string) { return t === 'urgent' ? 'Urgent' : t === 'notice' ? 'Notice' : 'General' }
+function getTypeLabel(t: string) { return t === 'urgent' ? '紧急' : t === 'notice' ? '通知' : '一般' }
 
 onMounted(() => { loadList() })
 </script>
@@ -48,13 +48,13 @@ onMounted(() => { loadList() })
   <div class="settings-page">
     <main class="main">
       <header class="header">
-        <div class="header-left"><button class="btn-back" @click="goBack">&#8592;</button><h1 class="header__title">Announcements</h1></div>
-        <button class="btn-primary" @click="openCreate">+ Create</button>
+        <div class="header-left"><button class="btn-back" @click="goBack">&#8592;</button><h1 class="header__title">公告管理</h1></div>
+        <button class="btn-primary" @click="openCreate">+ 创建</button>
       </header>
       <div class="table">
-        <div class="table-head"><span class="th" style="width:200px">Title</span><span class="th" style="width:70px">Type</span><span class="th" style="width:80px">Scope</span><span class="th" style="width:50px">Pin</span><span class="th" style="width:90px">Status</span><span class="th" style="width:150px">Published</span><span class="th-spacer"></span><span class="th th--right" style="width:140px">Actions</span></div>
-        <div v-if="loading" class="table-empty">Loading...</div>
-        <div v-if="!loading && announcements.length === 0" class="table-empty">No announcements</div>
+        <div class="table-head"><span class="th" style="width:200px">标题</span><span class="th" style="width:70px">类型</span><span class="th" style="width:80px">范围</span><span class="th" style="width:50px">置顶</span><span class="th" style="width:90px">状态</span><span class="th" style="width:150px">发布时间</span><span class="th-spacer"></span><span class="th th--right" style="width:140px">操作</span></div>
+        <div v-if="loading" class="table-empty">加载中...</div>
+        <div v-if="!loading && announcements.length === 0" class="table-empty">暂无公告</div>
         <div v-for="a in announcements" :key="a.id" class="table-row">
           <span class="td td--title" style="width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.title }}</span>
           <span class="td td--secondary" style="width:70px">{{ getTypeLabel(a.type) }}</span>
@@ -64,9 +64,9 @@ onMounted(() => { loadList() })
           <span class="td td--muted" style="width:150px;font-size:11px">{{ a.publishTime || '-' }}</span>
           <div class="td-spacer"></div>
           <div class="td td--actions" style="width:140px">
-            <button v-if="a.status === 0" class="btn-sm btn-sm--edit" @click="publishItem(a)">Publish</button>
-            <button class="btn-sm btn-sm--edit" @click="openEdit(a)">Edit</button>
-            <button class="btn-sm btn-sm--del" @click="handleDelete(a.id)">Delete</button>
+            <button v-if="a.status === 0" class="btn-sm btn-sm--edit" @click="publishItem(a)">发布</button>
+            <button class="btn-sm btn-sm--edit" @click="openEdit(a)">编辑</button>
+            <button class="btn-sm btn-sm--del" @click="handleDelete(a.id)">删除</button>
           </div>
         </div>
       </div>

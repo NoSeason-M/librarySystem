@@ -30,19 +30,38 @@ function startEdit(c: any) { editingId.value = c.id; editValue.value = c.configV
 function cancelEdit() { editingId.value = 0; editValue.value = '' }
 async function saveEdit(id: number) {
   saving.value = true
-  try { await updateConfig(id, { configValue: editValue.value }); editingId.value = 0; loadConfigs() } catch { alert('Save failed') } finally { saving.value = false }
+  try { await updateConfig(id, { configValue: editValue.value }); editingId.value = 0; loadConfigs() } catch { alert('保存失败') } finally { saving.value = false }
 }
 
 const configGroups = [
-  { name: 'Borrow Rules', keys: ['borrow.max_books', 'borrow.days', 'borrow.renew_count', 'borrow.renew_days'] },
-  { name: 'Fine Rules', keys: ['fine.overdue_rate', 'fine.damage_multiple', 'fine.lost_multiple'] },
-  { name: 'Reservation', keys: ['reservation.keep_hours'] },
-  { name: 'Reader Defaults', keys: ['reader.initial_password', 'reader.card_prefix'] },
-  { name: 'Security', keys: ['security.captcha', 'security.failed_limit'] },
-  { name: 'System', keys: ['system.name', 'system.icp', 'system.contact_email'] },
+  { name: '借阅规则', keys: ['borrow.max_books', 'borrow.days', 'borrow.renew_count', 'borrow.renew_days'] },
+  { name: '罚款规则', keys: ['fine.overdue_rate', 'fine.damage_multiple', 'fine.lost_multiple'] },
+  { name: '预约设置', keys: ['reservation.keep_hours'] },
+  { name: '读者默认值', keys: ['reader.initial_password', 'reader.card_prefix'] },
+  { name: '安全设置', keys: ['security.captcha', 'security.failed_limit'] },
+  { name: '系统信息', keys: ['system.name', 'system.icp', 'system.contact_email'] },
 ]
 
+const configLabels: Record<string, string> = {
+  'borrow.max_books': '最大借阅数',
+  'borrow.days': '默认借阅天数',
+  'borrow.renew_count': '续借次数上限',
+  'borrow.renew_days': '续借天数',
+  'fine.overdue_rate': '逾期费率（元/天）',
+  'fine.damage_multiple': '损坏赔偿倍数',
+  'fine.lost_multiple': '丢失赔偿倍数',
+  'reservation.keep_hours': '预约保留时长（小时）',
+  'reader.initial_password': '读者初始密码',
+  'reader.card_prefix': '读者证号前缀',
+  'security.captcha': '启用验证码（1=是/0=否）',
+  'security.failed_limit': '登录失败次数限制',
+  'system.name': '系统名称',
+  'system.icp': 'ICP 备案号',
+  'system.contact_email': '联系邮箱',
+}
+
 function getConfig(key: string): any { return configs.value.find(c => c.configKey === key) }
+function getConfigLabel(key: string): string { return configLabels[key] || key }
 function getGroupConfigs(keys: string[]) { return keys.map(k => getConfig(k)).filter(Boolean) }
 
 onMounted(() => { loadConfigs() })
@@ -51,20 +70,20 @@ onMounted(() => { loadConfigs() })
 <template>
   <div class="settings-page">
     <main class="main">
-      <header class="header"><div class="header-left"><button class="btn-back" @click="goBack">←</button><h1 class="header__title">System Config</h1></div></header>
-      <div v-if="loading" class="table-empty">Loading...</div>
+      <header class="header"><div class="header-left"><button class="btn-back" @click="goBack">←</button><h1 class="header__title">系统参数</h1></div></header>
+      <div v-if="loading" class="table-empty">加载中...</div>
       <div v-for="group in configGroups" :key="group.name" class="config-group">
         <h2 class="group-title">{{ group.name }}</h2>
         <div class="table">
           <div v-for="c in getGroupConfigs(group.keys)" :key="c.id" class="table-row">
-            <div class="config-key">{{ c.configKey }}</div>
+            <div class="config-key">{{ getConfigLabel(c.configKey) }}</div>
             <div v-if="editingId !== c.id" class="config-value">{{ c.configValue || '—' }}</div>
             <div v-else class="config-edit-row"><div class="input-box"><input v-model="editValue" type="text" @keyup.enter="saveEdit(c.id)" /></div></div>
             <div class="config-actions">
-              <button v-if="editingId !== c.id" class="btn-sm btn-sm--edit" @click="startEdit(c)">Edit</button>
+              <button v-if="editingId !== c.id" class="btn-sm btn-sm--edit" @click="startEdit(c)">编辑</button>
               <template v-else>
-                <button class="btn-sm btn-sm--edit" :disabled="saving" @click="saveEdit(c.id)">Save</button>
-                <button class="btn-sm btn-sm--del" @click="cancelEdit">Cancel</button>
+                <button class="btn-sm btn-sm--edit" :disabled="saving" @click="saveEdit(c.id)">保存</button>
+                <button class="btn-sm btn-sm--del" @click="cancelEdit">取消</button>
               </template>
             </div>
           </div>
