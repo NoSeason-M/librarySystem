@@ -8,7 +8,9 @@ import com.library.librarysystem.entity.*;
 import com.library.librarysystem.mapper.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,27 +23,18 @@ public class BookService {
     private final CategoryMapper categoryMapper;
     private final LocationMapper locationMapper;
 
-    /**
-     * Search books
-     */
-    public Map<String, Object> searchBooks(String keyword, int page, int size) {
-        LambdaQueryWrapper<BookInfo> qw = new LambdaQueryWrapper<BookInfo>()
-                .eq(BookInfo::getStatus, 1);
+    // ==================== Admin CRUD ====================
 
+    public Map<String, Object> listAdminBooks(String keyword, int page, int size) {
+        LambdaQueryWrapper<BookInfo> qw = new LambdaQueryWrapper<>();
         if (keyword != null && !keyword.isEmpty()) {
-            qw.and(w -> w
-                    .like(BookInfo::getTitle, keyword)
-                    .or()
-                    .like(BookInfo::getAuthor, keyword)
-                    .or()
-                    .like(BookInfo::getIsbn, keyword)
-            );
+            qw.and(w -> w.like(BookInfo::getTitle, keyword)
+                    .or().like(BookInfo::getAuthor, keyword)
+                    .or().like(BookInfo::getIsbn, keyword));
         }
-        qw.orderByDesc(BookInfo::getBorrowCount);
-
+        qw.orderByDesc(BookInfo::getCreateTime);
         IPage<BookInfo> p = bookInfoMapper.selectPage(new Page<>(page, size), qw);
-        List<Map<String, Object>> records = p.getRecords().stream().map(this::toBookItem).collect(Collectors.toList());
-
+        List<Map<String, Object>> records = p.getRecords().stream().map(this::toAdminItem).collect(Collectors.toList());
         Map<String, Object> result = new HashMap<>();
         result.put("records", records);
         result.put("total", p.getTotal());
@@ -51,26 +44,86 @@ public class BookService {
         return result;
     }
 
-    /**
-     * Book detail
-     * GET /api/books/{id}
-     */
-    public Map<String, Object> getBookDetail(Long id) {
+    @Transactional
+    public Long createBook(Map<String, Object> req) {
+        BookInfo book = new BookInfo();
+        book.setIsbn((String) req.get("isbn"));
+        book.setTitle((String) req.get("title"));
+        book.setAuthor((String) req.get("author"));
+        book.setPublisherId(req.get("publisherId") != null ? ((Number) req.get("publisherId")).longValue() : null);
+        book.setCategoryId(req.get("categoryId") != null ? ((Number) req.get("categoryId")).longValue() : null);
+        book.setPublishDate(req.get("publishDate") != null ? java.time.LocalDate.parse((String) req.get("publishDate")) : null);
+        book.setPrice(req.get("price") != null ? java.math.BigDecimal.valueOf(((Number) req.get("price")).doubleValue()) : null);
+        book.setPages(req.get("pages") != null ? ((Number) req.get("pages")).intValue() : null);
+        book.setBinding((String) req.get("binding"));
+        book.setLanguage((String) req.get("language"));
+        book.setSummary((String) req.get("summary"));
+        book.setTotalCopies(0);
+        book.setAvailableCopies(0);
+        book.setBorrowCount(0);
+        book.setStatus(1);
+        bookInfoMapper.insert(book);
+        return book.getId();
+    }
+
+    @Transactional
+    public void updateBook(Long id, Map<String, Object> req) {
         BookInfo book = bookInfoMapper.selectById(id);
         if (book == null) throw new BusinessException("Book not found");
 
-        Map<String, Object> detail = toBookDetail(book);
-        return detail;
+        if (req.containsKey("title")) book.setTitle((String) req.get("title"));
+        if (req.containsKey("author")) book.setAuthor((String) req.get("author"));
+        if (req.containsKey("isbn")) book.setIsbn((String) req.get("isbn"));
+        if (req.containsKey("publisherId")) book.setPublisherId(req.get("publisherId") != null ? ((Number) req.get("publisherId")).longValue() : null);
+        if (req.containsKey("categoryId")) book.setCategoryId(req.get("categoryId") != null ? ((Number) req.get("categoryId")).longValue() : null);
+        if (req.containsKey("publishDate")) book.setPublishDate(req.get("publishDate") != null ? java.time.LocalDate.parse((String) req.get("publishDate")) : null);
+        if (req.containsKey("price")) book.setPrice(req.get("price") != null ? java.math.BigDecimal.valueOf(((Number) req.get("price")).doubleValue()) : null);
+        if (req.containsKey("pages")) book.setPages(req.get("pages") != null ? ((Number) req.get("pages")).intValue() : null);
+        if (req.containsKey("binding")) book.setBinding((String) req.get("binding"));
+        if (req.containsKey("language")) book.setLanguage((String) req.get("language"));
+        if (req.containsKey("summary")) book.setSummary((String) req.get("summary"));
+        bookInfoMapper.updateById(book);
     }
 
-    /**
-     * Book copies
-     * GET /api/books/{id}/copies
-     */
+    @Transactional
+    public void deleteBook(Long id) {
+        BookInfo book = bookInfoMapper.selectById(id);
+        if (book == null) throw new BusinessException("Book not found");
+        bookInfoMapper.deleteById(id);
+        bookCopyMapper.delete(new LambdaQueryWrapper<BookCopy>().eq(BookCopy::getBookId, id));
+    }
+
+    // ==================== Public ====================
+
+    public Map<String, Object> searchBooks(String keyword, int page, int size) {
+        LambdaQueryWrapper<BookInfo> qw = new LambdaQueryWrapper<BookInfo>()
+                .eq(BookInfo::getStatus, 1);
+        if (keyword != null && !keyword.isEmpty()) {
+            qw.and(w -> w.like(BookInfo::getTitle, keyword)
+                    .or().like(BookInfo::getAuthor, keyword)
+                    .or().like(BookInfo::getIsbn, keyword));
+        }
+        qw.orderByDesc(BookInfo::getBorrowCount);
+        IPage<BookInfo> p = bookInfoMapper.selectPage(new Page<>(page, size), qw);
+        List<Map<String, Object>> records = p.getRecords().stream().map(this::toBookItem).collect(Collectors.toList());
+        Map<String, Object> result = new HashMap<>();
+        result.put("records", records);
+        result.put("total", p.getTotal());
+        result.put("size", p.getSize());
+        result.put("current", p.getCurrent());
+        result.put("pages", p.getPages());
+        return result;
+    }
+
+    public Map<String, Object> getBookDetail(Long id) {
+        BookInfo book = bookInfoMapper.selectById(id);
+        if (book == null) throw new BusinessException("Book not found");
+        return toBookDetail(book);
+    }
+
     public List<Map<String, Object>> getBookCopies(Long bookId) {
         List<BookCopy> copies = bookCopyMapper.selectList(
                 new LambdaQueryWrapper<BookCopy>().eq(BookCopy::getBookId, bookId));
-
         return copies.stream().map(copy -> {
             Map<String, Object> item = new HashMap<>();
             item.put("id", copy.getId());
@@ -79,19 +132,14 @@ public class BookService {
             item.put("statusLabel", getStatusLabel(copy.getStatus()));
             item.put("price", copy.getPrice());
             item.put("purchaseDate", copy.getPurchaseDate() != null ? copy.getPurchaseDate().toString() : null);
-
             if (copy.getLocationId() != null) {
                 Location loc = locationMapper.selectById(copy.getLocationId());
                 item.put("locationName", loc != null ? loc.getName() : null);
-                item.put("locationId", copy.getLocationId());
             }
             return item;
         }).collect(Collectors.toList());
     }
 
-    /**
-     * Hot books
-     */
     public List<Map<String, Object>> getHotBooks(int limit) {
         List<BookInfo> books = bookInfoMapper.selectList(
                 new LambdaQueryWrapper<BookInfo>()
@@ -101,11 +149,8 @@ public class BookService {
         return books.stream().map(this::toBookItem).collect(Collectors.toList());
     }
 
-    /**
-     * New arrivals
-     */
     public List<Map<String, Object>> getNewArrivals(int days, int limit) {
-        java.time.LocalDateTime since = java.time.LocalDateTime.now().minusDays(days);
+        LocalDateTime since = LocalDateTime.now().minusDays(days);
         List<BookInfo> books = bookInfoMapper.selectList(
                 new LambdaQueryWrapper<BookInfo>()
                         .eq(BookInfo::getStatus, 1)
@@ -115,7 +160,7 @@ public class BookService {
         return books.stream().map(this::toBookItem).collect(Collectors.toList());
     }
 
-    // ---- Private helpers ----
+    // ==================== Private helpers ====================
 
     private Map<String, Object> toBookItem(BookInfo book) {
         Map<String, Object> item = new HashMap<>();
@@ -135,6 +180,18 @@ public class BookService {
             Category cat = categoryMapper.selectById(book.getCategoryId());
             item.put("categoryName", cat != null ? cat.getName() : null);
         }
+        return item;
+    }
+
+    private Map<String, Object> toAdminItem(BookInfo book) {
+        Map<String, Object> item = new HashMap<>(toBookItem(book));
+        long totalCopies = bookCopyMapper.selectCount(
+                new LambdaQueryWrapper<BookCopy>().eq(BookCopy::getBookId, book.getId()));
+        long availCopies = bookCopyMapper.selectCount(
+                new LambdaQueryWrapper<BookCopy>().eq(BookCopy::getBookId, book.getId()).eq(BookCopy::getStatus, "in"));
+        item.put("totalCopies", totalCopies);
+        item.put("availableCopies", availCopies);
+        item.put("status", book.getStatus());
         return item;
     }
 

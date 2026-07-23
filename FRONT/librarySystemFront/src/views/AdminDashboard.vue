@@ -64,6 +64,8 @@ onMounted(async () => {
 
 function navigate(label: string) {
   if (label === 'Dashboard') return
+  if (label === 'Books') { router.push('/admin/books'); return }
+  if (label === 'Readers') { router.push('/admin/readers'); return }
   router.push('/admin')
 }
 </script>

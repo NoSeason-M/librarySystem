@@ -37,19 +37,29 @@ export interface BookCopyItem {
   dueDate?: string | null
 }
 
-export async function searchBooks(keyword?: string, page = 1, size = 10) {
+export interface PageResult<T> {
+  records: T[]
+  total: number
+  size: number
+  current: number
+  pages: number
+}
+
+// ==================== Public ====================
+
+export async function searchBooks(keyword?: string, page = 1, size = 10): Promise<PageResult<BookItem>> {
   return http.get('/books', { params: { keyword, page, size } }) as any
 }
 
-export async function getHotBooks(limit = 10) {
+export async function getHotBooks(limit = 10): Promise<BookItem[]> {
   return http.get('/books/hot', { params: { limit } }) as any
 }
 
-export async function getNewArrivals(days = 30, limit = 10) {
+export async function getNewArrivals(days = 30, limit = 10): Promise<BookItem[]> {
   return http.get('/books/new-arrivals', { params: { days, limit } }) as any
 }
 
-export async function getCategoryTree() {
+export async function getCategoryTree(): Promise<any[]> {
   return http.get('/categories/tree') as any
 }
 
@@ -59,4 +69,22 @@ export async function getBookDetail(id: number): Promise<BookItem> {
 
 export async function getBookCopies(id: number): Promise<BookCopyItem[]> {
   return http.get(`/books/${id}/copies`) as any
+}
+
+// ==================== Admin CRUD ====================
+
+export async function listAdminBooks(keyword?: string, page = 1, size = 10): Promise<PageResult<BookItem>> {
+  return http.get('/books/admin/list', { params: { keyword, page, size } }) as any
+}
+
+export async function createBook(data: Partial<BookItem>): Promise<{ bookId: number }> {
+  return http.post('/books', data) as any
+}
+
+export async function updateBook(id: number, data: Partial<BookItem>): Promise<void> {
+  return http.put(`/books/${id}`, data) as any
+}
+
+export async function deleteBook(id: number): Promise<void> {
+  return http.delete(`/books/${id}`) as any
 }
