@@ -18,6 +18,16 @@ spring:
       max-lifetime: 1200000
       connection-timeout: 30000
 
+  # ==================== 文件上传 ====================
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  web:
+    resources:
+      static-locations: file:${app.upload-dir}/,classpath:/static/
+
   # ==================== Redis 配置 (暂未启用) ====================
   # data:
   #   redis:
@@ -66,3 +76,7 @@ logging:
     com.library.librarysystem: debug
     org.springframework.security: warn
     org.springframework.web: info
+
+# ==================== 应用配置 ====================
+app:
+  upload-dir: ${user.dir}/uploads

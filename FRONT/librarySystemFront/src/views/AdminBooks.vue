@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { listAdminBooks, deleteBook, createBook, updateBook, getCategoryTree } from '../api/books'
+import { listAdminBooks, deleteBook, createBook, updateBook, getCategoryTree, uploadCover } from '../api/books'
 import type { BookItem } from '../api/books'
 
 const router = useRouter()
@@ -41,6 +41,10 @@ const showAddModal = ref(false)
 const saving = ref(false)
 const submitError = ref('')
 const addForm = ref({ title: '', author: '', isbn: '', categoryId: null as number | null, publishDate: '', price: null as number | null, pages: null as number | null, binding: '', language: '中文', summary: '' })
+const coverFile = ref<File | null>(null)
+const coverPreview = ref("")
+const coverFileEdit = ref<File | null>(null)
+const coverPreviewEdit = ref("")
 
 // Edit Modal
 const showEditModal = ref(false)
@@ -90,6 +94,7 @@ function getStatusLabel(book: BookItem) { return (book.availableCopies ?? 0) > 0
 function getStatusColor(book: BookItem) { return (book.availableCopies ?? 0) > 0 ? 'var(--success,#34D399)' : 'var(--warning,#FBBF24)' }
 
 function editBook(book: BookItem) {
+  coverFileEdit.value = null; coverPreviewEdit.value = book.coverUrl || ""
   editForm.value = { id: book.id, title: book.title, author: book.author, isbn: book.isbn || '', categoryId: book.categoryId || null, publishDate: book.publishDate || '', price: book.price, pages: book.pages || null, binding: book.binding || '', language: book.language || '中文', summary: book.summary || '' }
   editError.value = ''; showEditModal.value = true
 }
@@ -102,10 +107,15 @@ async function handleDelete(id: number, title: string) {
 async function submitEdit() {
   if (!editForm.value.title.trim() || !editForm.value.author.trim()) { editError.value = 'Title and Author are required'; return }
   editLoading.value = true; editError.value = ''
-  try { await updateBook(editForm.value.id, editForm.value as any); showEditModal.value = false; loadBooks() } catch (err: any) { editError.value = err.message || 'Update failed' } finally { editLoading.value = false }
+  try {
+      await updateBook(editForm.value.id, editForm.value as any)
+      if (coverFileEdit.value) await uploadCover(editForm.value.id, coverFileEdit.value)
+      showEditModal.value = false; loadBooks()
+    } catch (err: any) { editError.value = err.message || 'Update failed' } finally { editLoading.value = false }
 }
 
 function openAddModal() {
+  coverFile.value = null; coverPreview.value = ""
   addForm.value = { title: '', author: '', isbn: '', categoryId: null, publishDate: '', price: null, pages: null, binding: '', language: '中文', summary: '' }
   submitError.value = ''; showAddModal.value = true
 }
@@ -113,13 +123,36 @@ function openAddModal() {
 async function submitAddBook() {
   if (!addForm.value.title.trim() || !addForm.value.author.trim()) { submitError.value = 'Title and Author are required'; return }
   saving.value = true; submitError.value = ''
-  try { await createBook(addForm.value as any); showAddModal.value = false; currentPage.value = 1; loadBooks() } catch (err: any) { submitError.value = err.message || 'Create failed' } finally { saving.value = false }
+  try {
+      const r = await createBook(addForm.value as any)
+      if (coverFile.value) await uploadCover(r.bookId, coverFile.value)
+      showAddModal.value = false; currentPage.value = 1; loadBooks()
+    } catch (err: any) { submitError.value = err.message || 'Create failed' } finally { saving.value = false }
 }
 
 function selectCategory(id: number | null) { selectedCategoryId.value = id; categoryDropdownOpen.value = false }
 function selectStatus(val: string) { selectedStatus.value = val; statusDropdownOpen.value = false }
 function toggleCatDropdown() { categoryDropdownOpen.value = !categoryDropdownOpen.value; statusDropdownOpen.value = false }
 function toggleStatusDropdown() { statusDropdownOpen.value = !statusDropdownOpen.value; categoryDropdownOpen.value = false }
+function handleCoverChange(e: Event) {
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    coverFile.value = target.files[0]
+    const reader = new FileReader()
+    reader.onload = () => { coverPreview.value = reader.result as string }
+    reader.readAsDataURL(target.files[0])
+  }
+}
+function handleCoverChangeEdit(e: Event) {
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    coverFileEdit.value = target.files[0]
+    const reader = new FileReader()
+    reader.onload = () => { coverPreviewEdit.value = reader.result as string }
+    reader.readAsDataURL(target.files[0])
+  }
+}
+
 function getSelectedCategoryName() { if (!selectedCategoryId.value) return 'All Categories'; const c = categories.value.find(c => c.id === selectedCategoryId.value); return c ? c.name : 'All Categories' }
 
 onMounted(() => { loadBooks(); loadCategories() })
@@ -194,6 +227,12 @@ onMounted(() => { loadBooks(); loadCategories() })
             <div class="field"><label class="field-label">Binding</label><div class="input-box"><input v-model="addForm.binding" type="text" placeholder="平装/精装" /></div></div>
             <div class="field"><label class="field-label">Language</label><div class="input-box select-box"><select v-model="addForm.language"><option value="中文">中文</option><option value="英文">英文</option><option value="中英双语">中英双语</option><option value="日文">日文</option><option value="其他">其他</option></select><span class="select-arrow">▼</span></div></div>
           </div>
+          <div class="field"><label class="field-label">Cover Image</label>
+            <div class="cover-upload">
+              <div v-if="coverPreview" class="cover-preview"><img :src="coverPreview" alt="cover" /></div>
+              <input type="file" accept="image/jpeg,image/png,image/webp" @change="handleCoverChange" class="cover-input" />
+            </div>
+          </div>
           <div class="field"><label class="field-label">Summary</label><div class="input-box"><textarea v-model="addForm.summary" class="input-textarea" placeholder="Book description..." rows="3"></textarea></div></div>
         </div>
         <div class="modal__footer">
@@ -225,6 +264,12 @@ onMounted(() => { loadBooks(); loadCategories() })
             <div class="field"><label class="field-label">Pages</label><div class="input-box"><input v-model.number="editForm.pages" type="number" placeholder="0" /></div></div>
             <div class="field"><label class="field-label">Binding</label><div class="input-box"><input v-model="editForm.binding" type="text" placeholder="平装/精装" /></div></div>
             <div class="field"><label class="field-label">Language</label><div class="input-box select-box"><select v-model="editForm.language"><option value="中文">中文</option><option value="英文">英文</option><option value="中英双语">中英双语</option><option value="日文">日文</option><option value="其他">其他</option></select><span class="select-arrow">▼</span></div></div>
+          </div>
+          <div class="field"><label class="field-label">Cover Image</label>
+            <div class="cover-upload">
+              <div v-if="coverPreview" class="cover-preview"><img :src="coverPreview" alt="cover" /></div>
+              <input type="file" accept="image/jpeg,image/png,image/webp" @change="handleCoverChange" class="cover-input" />
+            </div>
           </div>
           <div class="field"><label class="field-label">Summary</label><div class="input-box"><textarea v-model="editForm.summary" class="input-textarea" placeholder="Book description..." rows="3"></textarea></div></div>
         </div>
@@ -303,6 +348,11 @@ onMounted(() => { loadBooks(); loadCategories() })
 .modal__error { margin: 12px 28px 0; padding: 10px 14px; border-radius: 10px; background: rgba(248,113,113,0.1); color: var(--danger, #F87171); font-size: 13px; }
 .modal__body { padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; }
 .modal__footer { display: flex; gap: 12px; justify-content: flex-end; padding: 16px 28px 24px; }
+.cover-upload { display: flex; flex-direction: column; gap: 8px; }
+.cover-preview { width: 120px; height: 160px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border, #E5E7EB); }
+.cover-preview img { width: 100%; height: 100%; object-fit: cover; }
+.cover-input { font-size: 13px; font-family: var(--font-sans, Inter); color: var(--text-secondary, #666); }
+
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field-label { font-family: var(--font-sans, Inter); font-size: 13px; font-weight: 500; color: var(--text-primary, #1A1A1A); }
 .input-box { width: 100%; padding: 10px 14px; border-radius: var(--input-radius, 12px); background: var(--bg-secondary, #F7F8FA); border: 1.5px solid var(--border, #E5E7EB); transition: border-color 0.2s; }

@@ -2,9 +2,11 @@ package com.library.librarysystem.controller;
 
 import com.library.librarysystem.common.Result;
 import com.library.librarysystem.service.BookService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -15,8 +17,6 @@ import java.util.Map;
 public class BookController {
 
     private final BookService bookService;
-
-    // ==================== Admin CRUD ====================
 
     @GetMapping("/admin/list")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_CATALOGER')")
@@ -29,9 +29,8 @@ public class BookController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_CATALOGER')")
-    public Result<Map<String, Long>> create(@RequestBody Map<String, Object> req) {
-        Long id = bookService.createBook(req);
-        return Result.success(Map.of("bookId", id));
+    public Result<Map<String, Object>> create(@RequestBody Map<String, Object> req) {
+        return Result.success(Map.of("bookId", bookService.createBook(req)));
     }
 
     @PutMapping("/{id}")
@@ -48,13 +47,28 @@ public class BookController {
         return Result.success();
     }
 
-    // ==================== Public ====================
+    @PostMapping("/{id}/cover")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_CATALOGER')")
+    public Result<Map<String, String>> uploadCover(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws Exception {
+        String coverUrl = bookService.uploadCover(id, file);
+        return Result.success(Map.of("coverUrl", coverUrl));
+    }
+
+    @PostMapping("/import")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_CATALOGER')")
+    public Result<Map<String, Object>> importBooks(@RequestParam("file") MultipartFile file) throws Exception {
+        return Result.success(bookService.importBooks(file));
+    }
+
+    @GetMapping("/export")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_CATALOGER')")
+    public void exportBooks(@RequestParam(required = false) String keyword, HttpServletResponse response) throws Exception {
+        bookService.exportBooks(response, keyword);
+    }
 
     @GetMapping
-    public Result<Map<String, Object>> search(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    public Result<Map<String, Object>> search(@RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
         return Result.success(bookService.searchBooks(keyword, page, size));
     }
 
@@ -64,8 +78,7 @@ public class BookController {
     }
 
     @GetMapping("/new-arrivals")
-    public Result<List<Map<String, Object>>> newArrivals(
-            @RequestParam(defaultValue = "30") int days,
+    public Result<List<Map<String, Object>>> newArrivals(@RequestParam(defaultValue = "30") int days,
             @RequestParam(defaultValue = "10") int limit) {
         return Result.success(bookService.getNewArrivals(days, limit));
     }
