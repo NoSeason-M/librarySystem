@@ -1,0 +1,57 @@
+# ===== Java / Maven (Backend) =====
+target/
+*.class
+*.jar
+*.war
+*.zip
+*.tar.gz
+*.log
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+.mvn/timing.log
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ===== Node / Vite (Frontend) =====
+node_modules/
+FRONT/librarySystemFront/dist/
+FRONT/librarySystemFront/node_modules/
+FRONT/librarySystemFront/.vite/
+
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+.vscode/settings.json
+
+# ===== OS =====
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ===== Environment / Secrets =====
+.env
+.env.local
+.env.production
+application-local.yml
+application-dev.yml
+
+# ===== Pencil design =====
+*.pen
+
+# ===== Temp files =====
+tmp/
+temp/
+*.tmp
+
+# ===== Project specific =====
+# Server local temp files
+Server/librarySystemServer/target/
+Server/librarySystemServer/*.log
