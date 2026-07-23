@@ -48,7 +48,7 @@ function navigateTo(item: { label: string; route?: string }) {
 <style scoped>
 .admin-layout { display: flex; min-height: 100vh; background: var(--bg-secondary, #F7F8FA); }
 .admin-content { flex: 1; display: flex; min-width: 0; }
-.sidebar { width: 240px; background: var(--bg-inverse, #0A0A0A); display: flex; flex-direction: column; flex-shrink: 0; }
+.sidebar { width: 240px; background: var(--bg-inverse, #0A0A0A); display: flex; flex-direction: column; flex-shrink: 0; position: sticky; top: 0; height: 100vh; }
 .sidebar__logo { display: flex; align-items: center; gap: 10px; padding: 20px; font-size: 22px; color: var(--text-inverse, #FFF); }
 .sidebar__logo-text { font-family: var(--font-sans, Inter); font-size: 18px; font-weight: 700; }
 .sidebar__nav { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
