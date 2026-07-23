@@ -53,10 +53,15 @@ const router = createRouter({
       component: () => import('../views/AdminReaders.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/admin/statistics',
+      name: 'AdminStatistics',
+      component: () => import('../views/AdminStatistics.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 
-// Auth guard
 router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('accessToken')
   if (to.meta.requiresAuth && !token) {

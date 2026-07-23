@@ -3,9 +3,7 @@ package com.library.librarysystem.controller;
 import com.library.librarysystem.common.Result;
 import com.library.librarysystem.service.StatisticsService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -30,6 +28,21 @@ public class StatisticsController {
     @GetMapping("/readers")
     public Result<Map<String, Object>> readers() {
         return Result.success(statisticsService.getReaderStats());
+    }
+
+    @GetMapping("/borrow")
+    public Result<Map<String, Object>> borrowStats(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(defaultValue = "month") String type) {
+        return Result.success(statisticsService.getBorrowStats(startDate, endDate, type));
+    }
+
+    @GetMapping("/hot-books")
+    public Result<List<Map<String, Object>>> hotBooks(
+            @RequestParam(defaultValue = "month") String type,
+            @RequestParam(defaultValue = "10") int limit) {
+        return Result.success(statisticsService.getHotBooks(type, limit));
     }
 
     @GetMapping("/recent-activity")

@@ -66,7 +66,19 @@ function navigate(label: string) {
   if (label === 'Dashboard') return
   if (label === 'Books') { router.push('/admin/books'); return }
   if (label === 'Readers') { router.push('/admin/readers'); return }
+  if (label === 'Statistics') { router.push('/admin/statistics'); return }
   router.push('/admin')
+}
+
+function quickAction(label: string) {
+  const routes: Record<string, string> = {
+    'Borrow Book': '/admin/borrow',
+    'Return Book': '/admin/return',
+    'Add New Book': '/admin/books',
+    'Register Reader': '/admin/readers',
+  }
+  const path = routes[label]
+  if (path) router.push(path)
 }
 </script>
 
@@ -143,7 +155,7 @@ function navigate(label: string) {
             <div v-for="btn in [
               { i:'📕', l:'Borrow Book' }, { i:'📗', l:'Return Book' },
               { i:'➕', l:'Add New Book' }, { i:'👤', l:'Register Reader' }
-            ]" :key="btn.l" class="action-btn">
+            ]" :key="btn.l" class="action-btn" @click="quickAction(btn.l)">
               <span>{{ btn.i }}</span>
               <span class="action-btn__label">{{ btn.l }}</span>
             </div>

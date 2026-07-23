@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,10 +25,79 @@ public class StatisticsService {
     private final CategoryMapper categoryMapper;
     private final SysOperationLogMapper operationLogMapper;
 
-    /**
-     * Circulation stats (for admin dashboard)
-     * GET /api/statistics/circulation
-     */
+    public Map<String, Object> getBorrowStats(String startDate, String endDate, String type) {
+        LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusMonths(6);
+        LocalDate end = endDate != null ? LocalDate.parse(endDate) : LocalDate.now();
+        List<BorrowRecord> allRecords = borrowRecordMapper.selectList(null);
+        List<Map<String, Object>> chartData = new ArrayList<>();
+
+        long months = ChronoUnit.MONTHS.between(start.withDayOfMonth(1), end.withDayOfMonth(1));
+        for (int i = 0; i <= months; i++) {
+            LocalDate m = start.plusMonths(i).withDayOfMonth(1);
+            LocalDate mEnd = m.withDayOfMonth(m.lengthOfMonth());
+            String label = m.format(DateTimeFormatter.ofPattern("MM/dd"));
+
+            LocalDateTime periodStart = m.atStartOfDay();
+            LocalDateTime periodEnd = mEnd.atTime(LocalTime.MAX);
+
+            long borrowCount = allRecords.stream()
+                    .filter(r -> r.getCreateTime() != null && !r.getCreateTime().isBefore(periodStart) && !r.getCreateTime().isAfter(periodEnd))
+                    .count();
+            long returnCount = allRecords.stream()
+                    .filter(r -> r.getReturnDate() != null && !r.getReturnDate().isBefore(periodStart) && !r.getReturnDate().isAfter(periodEnd))
+                    .count();
+
+            if (borrowCount > 0 || returnCount > 0) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("date", label);
+                item.put("borrowCount", borrowCount);
+                item.put("returnCount", returnCount);
+                chartData.add(item);
+            }
+        }
+
+        long totalBorrow = allRecords.size();
+        long totalReturn = allRecords.stream().filter(r -> r.getReturnDate() != null).count();
+        long days = ChronoUnit.DAYS.between(start, end);
+
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("totalBorrow", totalBorrow);
+        summary.put("totalReturn", totalReturn);
+        summary.put("avgDailyBorrow", days > 0 ? Math.round(totalBorrow * 10.0 / days) / 10.0 : 0);
+        summary.put("peakDay", chartData.stream().max(Comparator.comparing(m -> ((Number) m.get("borrowCount")).longValue()))
+                .map(m -> m.get("date")).orElse("—"));
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("chartData", chartData);
+        result.put("summary", summary);
+        return result;
+    }
+
+    public List<Map<String, Object>> getHotBooks(String type, int limit) {
+        List<BookInfo> books = bookInfoMapper.selectList(
+                new LambdaQueryWrapper<BookInfo>()
+                        .eq(BookInfo::getStatus, 1)
+                        .orderByDesc(BookInfo::getBorrowCount)
+                        .last("LIMIT " + limit));
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        int rank = 1;
+        for (BookInfo book : books) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("rank", rank++);
+            item.put("id", book.getId());
+            item.put("title", book.getTitle());
+            item.put("author", book.getAuthor());
+            item.put("borrowCount", book.getBorrowCount() != null ? book.getBorrowCount() : 0);
+            if (book.getCategoryId() != null) {
+                Category cat = categoryMapper.selectById(book.getCategoryId());
+                item.put("categoryName", cat != null ? cat.getName() : null);
+            }
+            result.add(item);
+        }
+        return result;
+    }
+
     public Map<String, Object> getCirculationStats() {
         LocalDateTime todayStart = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
         LocalDateTime todayEnd = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
@@ -34,17 +105,13 @@ public class StatisticsService {
         long todayBorrow = borrowRecordMapper.selectCount(
                 new LambdaQueryWrapper<BorrowRecord>()
                         .ge(BorrowRecord::getCreateTime, todayStart)
-                        .le(BorrowRecord::getCreateTime, todayEnd)
-                        .eq(BorrowRecord::getStatus, "borrowed"));
+                        .le(BorrowRecord::getCreateTime, todayEnd));
         long todayReturn = borrowRecordMapper.selectCount(
                 new LambdaQueryWrapper<BorrowRecord>()
-                        .ge(BorrowRecord::getCreateTime, todayStart)
-                        .le(BorrowRecord::getCreateTime, todayEnd)
-                        .eq(BorrowRecord::getStatus, "returned"));
-
-        long totalBorrow = borrowRecordMapper.selectCount(
-                new LambdaQueryWrapper<BorrowRecord>()
-                        .eq(BorrowRecord::getStatus, "borrowed"));
+                        .ge(BorrowRecord::getReturnDate, todayStart)
+                        .le(BorrowRecord::getReturnDate, todayEnd));
+        long totalBorrowed = borrowRecordMapper.selectCount(
+                new LambdaQueryWrapper<BorrowRecord>().eq(BorrowRecord::getStatus, "borrowed"));
         long overdueCount = borrowRecordMapper.selectCount(
                 new LambdaQueryWrapper<BorrowRecord>()
                         .eq(BorrowRecord::getStatus, "borrowed")
@@ -56,8 +123,8 @@ public class StatisticsService {
         today.put("fineCount", 0);
 
         Map<String, Object> overall = new HashMap<>();
-        overall.put("totalBorrow", totalBorrow);
-        overall.put("overdueRate", totalBorrow > 0 ? Math.round(overdueCount * 100.0 / totalBorrow * 10) / 10.0 : 0);
+        overall.put("totalBorrow", totalBorrowed);
+        overall.put("overdueRate", totalBorrowed > 0 ? Math.round(overdueCount * 100.0 / totalBorrowed * 10) / 10.0 : 0);
         overall.put("reservationFulfillRate", 0);
 
         Map<String, Object> result = new HashMap<>();
@@ -66,15 +133,10 @@ public class StatisticsService {
         return result;
     }
 
-    /**
-     * Collection stats (for admin dashboard)
-     * GET /api/statistics/collection
-     */
     public Map<String, Object> getCollectionStats() {
         long totalBooks = bookInfoMapper.selectCount(null);
         long totalCopies = bookCopyMapper.selectCount(null);
 
-        // Category distribution
         List<Category> categories = categoryMapper.selectList(
                 new LambdaQueryWrapper<Category>().eq(Category::getLevel, 1));
         List<Map<String, Object>> catDist = new ArrayList<>();
@@ -90,7 +152,6 @@ public class StatisticsService {
             }
         }
 
-        // Monthly new arrivals (last 6 months)
         List<Map<String, Object>> monthlyNew = new ArrayList<>();
         for (int i = 5; i >= 0; i--) {
             LocalDate m = LocalDate.now().minusMonths(i);
@@ -113,40 +174,49 @@ public class StatisticsService {
         return result;
     }
 
-    /**
-     * Reader stats
-     * GET /api/statistics/readers
-     */
     public Map<String, Object> getReaderStats() {
         long totalReaders = readerMapper.selectCount(null);
         LocalDate monthAgo = LocalDate.now().minusDays(30);
-
-        // Count active readers (borrowed in last 30 days)
         long activeReaders = borrowRecordMapper.selectCount(
                 new LambdaQueryWrapper<BorrowRecord>()
                         .ge(BorrowRecord::getCreateTime, monthAgo.atStartOfDay()));
+
+        List<Reader> allReaders = readerMapper.selectList(null);
+        Map<Long, Long> typeCountMap = allReaders.stream()
+                .filter(r -> r.getReaderTypeId() != null)
+                .collect(Collectors.groupingBy(Reader::getReaderTypeId, Collectors.counting()));
+
+        Map<String, Long> typeMap = new LinkedHashMap<>();
+        typeMap.put("Student", typeCountMap.getOrDefault(1L, 0L));
+        typeMap.put("Teacher", typeCountMap.getOrDefault(2L, 0L));
+        typeMap.put("Staff", typeCountMap.getOrDefault(3L, 0L));
+        typeMap.put("External", typeCountMap.getOrDefault(4L, 0L));
+
+        List<Map<String, Object>> typeDistResult = new ArrayList<>();
+        for (Map.Entry<String, Long> e : typeMap.entrySet()) {
+            if (e.getValue() > 0) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("name", e.getKey());
+                item.put("count", e.getValue());
+                item.put("percentage", totalReaders > 0 ? Math.round(e.getValue() * 100.0 / totalReaders * 10) / 10.0 : 0);
+                typeDistResult.add(item);
+            }
+        }
 
         Map<String, Object> result = new HashMap<>();
         result.put("totalReaders", totalReaders);
         result.put("activeReaders", activeReaders);
         result.put("activeRate", totalReaders > 0 ? Math.round(activeReaders * 100.0 / totalReaders * 10) / 10.0 : 0);
+        result.put("typeDistribution", typeDistResult);
         return result;
     }
 
-    /**
-     * Recent operation logs (for admin dashboard activity feed)
-     */
     public List<Map<String, Object>> getRecentActivity(int limit) {
         List<SysOperationLog> logs = operationLogMapper.selectList(
                 new LambdaQueryWrapper<SysOperationLog>()
                         .orderByDesc(SysOperationLog::getCreateTime)
                         .last("LIMIT " + limit));
-
-        if (logs.isEmpty()) {
-            // Return dummy data if no logs exist
-            return getDefaultActivities();
-        }
-
+        if (logs.isEmpty()) return getDefaultActivities();
         return logs.stream().map(log -> {
             Map<String, Object> item = new HashMap<>();
             item.put("user", log.getUsername());
@@ -158,23 +228,13 @@ public class StatisticsService {
     }
 
     private List<Map<String, Object>> getDefaultActivities() {
-        List<Map<String, Object>> activities = new ArrayList<>();
-        String[][] defaults = {
-            {"admin", "登录系统", "just now", "auth"},
-            {"Wang Xiaoming", "借阅《三体》", "10 min ago", "borrow"},
-            {"Li Hua", "归还《1984》", "1 hr ago", "borrow"},
-            {"Zhang Wei", "预约《傲慢与偏见》", "2 hr ago", "reservation"},
-            {"Chen Mei", "缴纳逾期罚款 ¥5.00", "1 day ago", "fine"},
-        };
-        for (String[] d : defaults) {
-            Map<String, Object> item = new HashMap<>();
-            item.put("user", d[0]);
-            item.put("action", d[1]);
-            item.put("time", d[2]);
-            item.put("color", getActivityColor(d[3]));
-            activities.add(item);
-        }
-        return activities;
+        return List.of(
+            Map.of("user", "admin", "action", "登录系统", "time", "just now", "color", "#888888"),
+            Map.of("user", "Wang Xiaoming", "action", "借阅《The Great Gatsby》", "time", "10 min ago", "color", "#4A9FD8"),
+            Map.of("user", "Li Hua", "action", "归还《1984》", "time", "1 hr ago", "color", "#34D399"),
+            Map.of("user", "Zhang Wei", "action", "预约《Pride and Prejudice》", "time", "2 hr ago", "color", "#FBBF24"),
+            Map.of("user", "Chen Mei", "action", "缴纳逾期罚款 ¥5.00", "time", "1 day ago", "color", "#F87171")
+        );
     }
 
     private String getActivityColor(String module) {

@@ -12,6 +12,14 @@ export async function getReaderStats(): Promise<any> {
   return http.get('/statistics/readers') as any
 }
 
+export async function getBorrowStats(startDate?: string, endDate?: string, type = 'month'): Promise<any> {
+  return http.get('/statistics/borrow', { params: { startDate, endDate, type } }) as any
+}
+
+export async function getHotBooks(type = 'month', limit = 10): Promise<any[]> {
+  return http.get('/statistics/hot-books', { params: { type, limit } }) as any
+}
+
 export async function getRecentActivity(): Promise<any[]> {
   return http.get('/statistics/recent-activity') as any
 }
