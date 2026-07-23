@@ -41,7 +41,7 @@ public class BookService {
 
     // ==================== Admin CRUD ====================
 
-    public Map<String, Object> listAdminBooks(String keyword, int page, int size) {
+    public Map<String, Object> listAdminBooks(String keyword, String author, String isbn, Long categoryId, String publisher, String language, String binding, String yearStart, String yearEnd, String statusFilter, int page, int size) {
         LambdaQueryWrapper<BookInfo> qw = new LambdaQueryWrapper<>();
         if (keyword != null && !keyword.isEmpty()) {
             qw.and(w -> w.like(BookInfo::getTitle, keyword)

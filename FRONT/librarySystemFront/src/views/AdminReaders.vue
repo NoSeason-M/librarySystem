@@ -38,6 +38,8 @@ const readerTypes = ref<ReaderType[]>(defaultReaderTypes)
 const selectedTypeId = ref<number | undefined>(undefined)
 const typeDropdownOpen = ref(false)
 const selectedCardStatus = ref<number | undefined>(undefined)
+const showAdvancedSearch = ref(false)
+const advSearch = ref({ readerNo: "", email: "", registerDateStart: "", registerDateEnd: "" })
 const statusDropdownOpen = ref(false)
 
 const statusFilterOptions = [
@@ -95,7 +97,7 @@ const visiblePages = computed(() => {
 async function loadReaders() {
   loading.value = true
   try {
-    const result = await listReaders(keyword.value || undefined, selectedTypeId.value, selectedCardStatus.value, currentPage.value, pageSize)
+    const result = await listReaders(keyword.value || undefined, selectedTypeId.value, selectedCardStatus.value, advSearch.value.readerNo || undefined, advSearch.value.email || undefined, advSearch.value.registerDateStart || undefined, advSearch.value.registerDateEnd || undefined, currentPage.value, pageSize)
     readers.value = result.records
     total.value = result.total
     totalPages.value = result.pages || 1
@@ -114,6 +116,15 @@ async function loadReaderTypes() {
       readerTypes.value = types
     }
   } catch { /* use defaults */ }
+}
+
+function clearAdvSearch() {
+  advSearch.value = { readerNo: "", email: "", registerDateStart: "", registerDateEnd: "" }
+  onSearch()
+}
+function toggleAdvanced() {
+  showAdvancedSearch.value = !showAdvancedSearch.value
+  if (!showAdvancedSearch.value) clearAdvSearch()
 }
 
 function onSearch() {
@@ -254,9 +265,10 @@ onMounted(() => {
 
       <!-- Toolbar -->
       <div class="toolbar">
-        <div class="search-box">
+        <div class="search-bar">
           <span class="search-icon">🔍</span>
-          <input v-model="keyword" class="search-input" placeholder="Search by name, reader no or phone..." @keyup.enter="onSearch" />
+          <input v-model="keyword" class="search-input" placeholder="Search by name, reader no or phone..." @click="showAdvancedSearch = true" @keyup.enter="onSearch" />
+          <button class="search-btn" @click="onSearch">Search</button>
         </div>
         <div class="filter-dropdown" @click="typeDropdownOpen = !typeDropdownOpen; statusDropdownOpen = false">
           <span>{{ selectedTypeId ? (readerTypes.find(t => t.id === selectedTypeId)?.name || 'All Types') : 'All Types' }}</span>
@@ -281,7 +293,22 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Table -->
+      <div v-if="showAdvancedSearch" class="advanced-search">
+        <div class="adv-row">
+          <div class="adv-field"><label>Reader No</label><input v-model="advSearch.readerNo" placeholder="Reader No" @keyup.enter="onSearch" /></div>
+          <div class="adv-field"><label>Email</label><input v-model="advSearch.email" placeholder="Email" @keyup.enter="onSearch" /></div>
+          <div class="adv-field"><label>Register Date</label></div>
+        </div>
+        <div class="adv-row">
+          <div class="adv-field"><label>From</label><input v-model="advSearch.registerDateStart" type="date" /></div>
+          <div class="adv-field"><label>To</label><input v-model="advSearch.registerDateEnd" type="date" /></div>
+          <div class="adv-field"></div>
+        </div>
+        <div class="adv-actions">
+          <button class="btn-sm btn-sm--edit" @click="onSearch">Search</button>
+          <button class="btn-sm btn-sm--del" @click="clearAdvSearch()">Clear</button>
+        </div>
+      </div>
       <div class="table">
         <div class="table-head">
           <span class="th" style="width:50px">Avatar</span>
@@ -295,19 +322,21 @@ onMounted(() => {
           <span class="th-spacer"></span>
           <span class="th th--right" style="width:110px">Actions</span>
         </div>
+
+
         <div v-if="loading" class="table-empty">Loading...</div>
         <div v-if="!loading && filteredReaders.length === 0" class="table-empty">No readers found</div>
         <div v-for="reader in filteredReaders" :key="reader.id" class="table-row">
           <div class="td" style="width:50px"><div class="avatar-circle">{{ getInitials(reader.realName) }}</div></div>
           <span class="td td--name" style="width:150px">{{ reader.realName }}</span>
           <span class="td td--mono" style="width:130px">{{ reader.readerNo }}</span>
-          <span class="td td--secondary" style="width:90px">{{ reader.readerTypeName || '—' }}</span>
+          <span class="td td--secondary" style="width:90px">{{ reader.readerTypeName || '-' }}</span>
           <div class="td" style="width:110px">
             <span class="status-badge" :style="{ background: getCardStatusColor(reader.cardStatus) }">{{ getCardStatusLabel(reader.cardStatus) }}</span>
           </div>
           <span class="td td--secondary" style="width:70px">{{ reader.currentBorrowed }}</span>
-          <span class="td td--secondary" style="width:130px">{{ reader.phone || '—' }}</span>
-          <span class="td td--secondary" style="width:150px">{{ reader.email || '—' }}</span>
+          <span class="td td--secondary" style="width:130px">{{ reader.phone || '-' }}</span>
+          <span class="td td--secondary" style="width:150px">{{ reader.email || '-' }}</span>
           <div class="td-spacer"></div>
           <div class="td td--actions" style="width:110px">
             <button class="btn-action btn-action--edit" @click="openEditModal(reader)">Edit</button>
@@ -481,10 +510,13 @@ onMounted(() => {
 
 /* Toolbar */
 .toolbar { display: flex; gap: 12px; align-items: center; position: relative; }
-.search-box { display: flex; align-items: center; gap: 8px; width: 320px; padding: 10px 16px; border-radius: var(--input-radius, 12px); background: var(--bg-primary, #FFF); border: 1.5px solid var(--border, #E5E7EB); }
-.search-icon { font-size: 14px; line-height: 1; color: var(--text-muted, #888); }
-.search-input { flex: 1; background: transparent; border: none; outline: none; font-family: var(--font-sans, Inter); font-size: 13px; color: var(--text-primary, #1A1A1A); }
-.search-input::placeholder { color: var(--text-muted, #888); }
+.search-bar { display: flex; align-items: center; gap: 8px; width: 480px; padding: 4px 6px 4px 20px; border-radius: 999px; background: var(--bg-secondary, #F7F8FA); border: 1.5px solid var(--border, #E5E7EB); transition: border-color 0.15s; }
+.search-bar .search-icon { font-size: 16px; color: var(--text-muted, #888); flex-shrink: 0; }
+.search-bar .search-input { flex: 1; height: 36px; background: transparent; border: none; outline: none; font-family: var(--font-sans, Inter); font-size: 14px; color: var(--text-primary, #1A1A1A); }
+.search-bar .search-input::placeholder { color: var(--text-muted, #888); }
+.search-bar:focus-within { border-color: var(--accent, #4A9FD8); }
+.search-bar .search-btn { padding: 10px 20px; border-radius: 999px; background: var(--accent, #4A9FD8); color: var(--text-inverse, #FFF); font-family: var(--font-sans, Inter); font-size: 13px; font-weight: 600; border: none; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: opacity 0.15s; }
+.search-bar .search-btn:hover { opacity: 0.9; }
 
 .filter-dropdown { position: relative; display: flex; align-items: center; justify-content: space-between; width: 140px; padding: 10px 14px; border-radius: 10px; background: var(--bg-primary, #FFF); border: 1.5px solid var(--border, #E5E7EB); font-family: var(--font-sans, Inter); font-size: 13px; color: var(--text-secondary, #666); cursor: pointer; user-select: none; }
 .filter-arrow { font-size: 10px; color: var(--text-muted, #888); }
@@ -575,4 +607,12 @@ onMounted(() => {
 .btn-cancel:hover { background: var(--bg-secondary, #F7F8FA); }
 .spinner { width: 16px; height: 16px; border: 2px solid var(--text-inverse, #FFF); border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.toolbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.advanced-search { background: var(--bg-primary,#FFF); border: 1px solid var(--border,#E5E7EB); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.adv-row { display: flex; gap: 16px; }
+.adv-field { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.adv-field label { font-size: 11px; color: var(--text-muted,#888); font-weight: 500; }
+.adv-field input, .adv-field select { padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border,#E5E7EB); background: var(--bg-secondary,#F7F8FA); font-family: var(--font-sans,Inter); font-size: 12px; color: var(--text-primary,#1A1A1A); outline: none; }
+.adv-field input:focus, .adv-field select:focus { border-color: var(--accent,#4A9FD8); }
+.adv-actions { display: flex; gap: 8px; }
 </style>

@@ -40,7 +40,7 @@ export async function getBookCopies(id: number) {
   return http.get(`/books/${id}/copies`) as any
 }
 
-export async function listAdminBooks(keyword?: string, page = 1, size = 10) {
+export async function listAdminBooks(keyword?: string, author?: string, isbn?: string, categoryId?: number, publisher?: string, language?: string, binding?: string, yearStart?: string, yearEnd?: string, statusFilter?: string, page = 1, size = 10) {
   return http.get('/books/admin/list', { params: { keyword, page, size } }) as any
 }
 export async function createBook(data: any) {

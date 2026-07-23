@@ -34,6 +34,8 @@ const statusOptions = [
   { value: 'borrowed', label: 'Borrowed' },
 ]
 const selectedStatus = ref('')
+const showAdvancedSearch = ref(false)
+const advSearch = ref({ author: "", isbn: "", publisher: "", language: "", binding: "", yearStart: "", yearEnd: "" })
 const statusDropdownOpen = ref(false)
 
 // Add Modal
@@ -73,13 +75,18 @@ const visiblePages = computed(() => {
 async function loadBooks() {
   loading.value = true
   try {
-    const r = await listAdminBooks(keyword.value || undefined, currentPage.value, pageSize)
+    const r = await listAdminBooks(keyword.value || undefined, advSearch.value.author || undefined, advSearch.value.isbn || undefined, selectedCategoryId.value || undefined, advSearch.value.publisher || undefined, advSearch.value.language || undefined, advSearch.value.binding || undefined, advSearch.value.yearStart || undefined, advSearch.value.yearEnd || undefined, selectedStatus.value || undefined, currentPage.value, pageSize)
     books.value = r.records; total.value = r.total; totalPages.value = r.pages || 1
   } catch { books.value = [] } finally { loading.value = false }
 }
 
 async function loadCategories() {
   try { const t = await getCategoryTree(); categories.value = t.map((c: any) => ({ id: c.id, name: c.name })) } catch { categories.value = [] }
+}
+
+function clearAdvSearch() {
+  advSearch.value = { author: "", isbn: "", publisher: "", language: "", binding: "", yearStart: "", yearEnd: "" }
+  onSearch()
 }
 
 function onSearch() { currentPage.value = 1; loadBooks() }
@@ -165,7 +172,11 @@ onMounted(() => { loadBooks(); loadCategories() })
       <header class="header"><h1 class="header__title">Books</h1><button class="btn-add" @click="openAddModal"><span class="btn-add__icon">+</span><span>Add New Book</span></button></header>
 
       <div class="toolbar">
-        <div class="search-box"><span class="search-icon">🔍</span><input v-model="keyword" class="search-input" placeholder="Search by title, author or ISBN..." @keyup.enter="onSearch" /></div>
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input v-model="keyword" class="search-input" placeholder="Search by title, author or ISBN..." @click="showAdvancedSearch = true" @keyup.enter="onSearch" />
+          <button class="search-btn" @click="onSearch">Search</button>
+        </div>
         <div class="filter-dropdown" @click="toggleCatDropdown"><span>{{ getSelectedCategoryName() }}</span><span class="filter-arrow">▼</span>
           <div v-if="categoryDropdownOpen" class="dropdown-menu"><div class="dropdown-item" @click.stop="selectCategory(null)">All Categories</div><div v-for="cat in categories" :key="cat.id" class="dropdown-item" :class="{ 'dropdown-item--active': selectedCategoryId === cat.id }" @click.stop="selectCategory(cat.id)">{{ cat.name }}</div></div>
         </div>
@@ -174,6 +185,28 @@ onMounted(() => { loadBooks(); loadCategories() })
         </div>
       </div>
 
+      <div v-if="showAdvancedSearch" class="advanced-search">
+        <div class="adv-row">
+          <div class="adv-field"><label>Author</label><input v-model="advSearch.author" placeholder="Author" @keyup.enter="onSearch" /></div>
+          <div class="adv-field"><label>ISBN</label><input v-model="advSearch.isbn" placeholder="ISBN" @keyup.enter="onSearch" /></div>
+          <div class="adv-field"><label>Publisher</label><input v-model="advSearch.publisher" placeholder="Publisher" @keyup.enter="onSearch" /></div>
+        </div>
+        <div class="adv-row">
+          <div class="adv-field"><label>Language</label>
+            <select v-model="advSearch.language"><option value="">All</option><option value="中文">中文</option><option value="英文">英文</option></select>
+          </div>
+          <div class="adv-field"><label>Binding</label>
+            <select v-model="advSearch.binding"><option value="">All</option><option value="平装">平装</option><option value="精装">精装</option></select>
+          </div>
+          <div class="adv-field"><label>Year</label>
+            <div class="adv-year-range"><input v-model="advSearch.yearStart" placeholder="2020" style="width:80px" /> ~ <input v-model="advSearch.yearEnd" placeholder="2026" style="width:80px" /></div>
+          </div>
+        </div>
+        <div class="adv-actions">
+          <button class="btn-sm btn-sm--edit" @click="onSearch">Search</button>
+          <button class="btn-sm btn-sm--del" @click="clearAdvSearch()">Clear</button>
+        </div>
+      </div>
       <div class="table">
         <div class="table-head"><span class="th" style="width:48px">Cover</span><span class="th" style="width:220px">Title</span><span class="th" style="width:160px">Author</span><span class="th" style="width:180px">ISBN</span><span class="th" style="width:120px">Category</span><span class="th" style="width:70px">Copies</span><span class="th" style="width:100px">Status</span><span class="th-spacer"></span><span class="th th--right" style="width:100px">Actions</span></div>
         <div v-if="loading" class="table-empty">Loading...</div>
@@ -301,10 +334,13 @@ onMounted(() => { loadBooks(); loadCategories() })
 .btn-add:hover { opacity: 0.9; }
 .btn-add__icon { font-size: 16px; line-height: 1; }
 .toolbar { display: flex; gap: 12px; align-items: center; position: relative; }
-.search-box { display: flex; align-items: center; gap: 8px; width: 360px; padding: 10px 16px; border-radius: var(--input-radius, 12px); background: var(--bg-primary, #FFF); border: 1.5px solid var(--border, #E5E7EB); }
-.search-icon { font-size: 14px; line-height: 1; color: var(--text-muted, #888); }
-.search-input { flex: 1; background: transparent; border: none; outline: none; font-family: var(--font-sans, Inter); font-size: 13px; color: var(--text-primary, #1A1A1A); }
-.search-input::placeholder { color: var(--text-muted, #888); }
+.search-bar { display: flex; align-items: center; gap: 8px; width: 480px; padding: 4px 6px 4px 20px; border-radius: 999px; background: var(--bg-secondary, #F7F8FA); border: 1.5px solid var(--border, #E5E7EB); transition: border-color 0.2s; }
+.search-bar .search-icon { font-size: 16px; color: var(--text-muted, #888); flex-shrink: 0; }
+.search-bar .search-input { flex: 1; height: 36px; background: transparent; border: none; outline: none; font-family: var(--font-sans, Inter); font-size: 14px; color: var(--text-primary, #1A1A1A); }
+.search-bar .search-input::placeholder { color: var(--text-muted, #888); }
+.search-bar:focus-within { border-color: var(--accent, #4A9FD8); }
+.search-bar .search-btn { padding: 10px 20px; border-radius: 999px; background: var(--accent, #4A9FD8); color: var(--text-inverse, #FFF); font-family: var(--font-sans, Inter); font-size: 13px; font-weight: 600; border: none; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: opacity 0.15s; }
+.search-bar .search-btn:hover { opacity: 0.9; }
 .filter-dropdown { position: relative; display: flex; align-items: center; justify-content: space-between; width: 160px; padding: 10px 14px; border-radius: 10px; background: var(--bg-primary, #FFF); border: 1.5px solid var(--border, #E5E7EB); font-family: var(--font-sans, Inter); font-size: 13px; color: var(--text-secondary, #666); cursor: pointer; user-select: none; }
 .filter-arrow { font-size: 10px; color: var(--text-muted, #888); }
 .dropdown-menu { position: absolute; top: calc(100% + 4px); left: 0; width: 220px; max-height: 300px; overflow-y: auto; background: var(--bg-primary, #FFF); border-radius: 12px; border: 1px solid var(--border, #E5E7EB); box-shadow: 0 4px 16px rgba(0,0,0,0.08); z-index: 100; padding: 4px; }
@@ -374,4 +410,13 @@ onMounted(() => { loadBooks(); loadCategories() })
 .btn-cancel:hover { background: var(--bg-secondary, #F7F8FA); }
 .spinner { width: 16px; height: 16px; border: 2px solid var(--text-inverse, #FFF); border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.toolbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.advanced-search { background: var(--bg-primary,#FFF); border: 1px solid var(--border,#E5E7EB); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.adv-row { display: flex; gap: 16px; }
+.adv-field { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.adv-field label { font-size: 11px; color: var(--text-muted,#888); font-weight: 500; }
+.adv-field input, .adv-field select { padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border,#E5E7EB); background: var(--bg-secondary,#F7F8FA); font-family: var(--font-sans,Inter); font-size: 12px; color: var(--text-primary,#1A1A1A); outline: none; }
+.adv-field input:focus, .adv-field select:focus { border-color: var(--accent,#4A9FD8); }
+.adv-year-range { display: flex; align-items: center; gap: 6px; }
+.adv-actions { display: flex; gap: 8px; }
 </style>

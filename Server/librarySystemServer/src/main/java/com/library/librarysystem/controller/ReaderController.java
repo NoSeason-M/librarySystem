@@ -13,7 +13,6 @@ import java.util.Map;
 @RequestMapping("/api/readers")
 @RequiredArgsConstructor
 public class ReaderController {
-
     private final ReaderService readerService;
 
     @GetMapping
@@ -22,48 +21,32 @@ public class ReaderController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long readerTypeId,
             @RequestParam(required = false) Integer cardStatus,
+            @RequestParam(required = false) String readerNo,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String registerDateStart,
+            @RequestParam(required = false) String registerDateEnd,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return Result.success(readerService.listReaders(keyword, readerTypeId, cardStatus, page, size));
+        return Result.success(readerService.listReaders(keyword, readerTypeId, cardStatus, readerNo, email, registerDateStart, registerDateEnd, page, size));
     }
 
-    @GetMapping("/types")
-    public Result<List<Map<String, Object>>> types() {
+    @GetMapping("/types") public Result<List<Map<String, Object>>> types() {
         return Result.success(readerService.getReaderTypes());
     }
-
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_LIBRARIAN')")
+    @GetMapping("/{id}") @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_LIBRARIAN')")
     public Result<Map<String, Object>> detail(@PathVariable Long id) {
         return Result.success(readerService.getReaderDetail(id));
     }
-
-    @PostMapping
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_LIBRARIAN')")
+    @PostMapping @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_LIBRARIAN')")
     public Result<Map<String, Object>> create(@RequestBody Map<String, Object> req) {
         return Result.success(readerService.createReader(req));
     }
-
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_LIBRARIAN')")
+    @PutMapping("/{id}") @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_LIBRARIAN')")
     public Result<Void> update(@PathVariable Long id, @RequestBody Map<String, Object> req) {
-        readerService.updateReader(id, req);
-        return Result.success();
+        readerService.updateReader(id, req); return Result.success();
     }
-
-    @PutMapping("/{id}/card")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_LIBRARIAN')")
+    @PutMapping("/{id}/card") @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_LIBRARIAN')")
     public Result<Void> cardAction(@PathVariable Long id, @RequestBody Map<String, String> req) {
-        String action = req.get("action");
-        readerService.updateCardStatus(id, action);
-        return Result.success();
-    }
-
-    @PutMapping("/{id}/freeze")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_LIBRARIAN')")
-    public Result<Void> freezeAction(@PathVariable Long id, @RequestBody Map<String, String> req) {
-        String action = req.get("action");
-        readerService.updateCardStatus(id, action);
-        return Result.success();
+        readerService.updateCardStatus(id, req.get("action")); return Result.success();
     }
 }

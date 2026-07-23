@@ -26,7 +26,7 @@ public class ReaderService {
     private final SysUserRoleMapper userRoleMapper;
     private final PasswordEncoder passwordEncoder;
 
-    public Map<String, Object> listReaders(String keyword, Long readerTypeId, Integer cardStatus, int page, int size) {
+    public Map<String, Object> listReaders(String keyword, Long readerTypeId, Integer cardStatus, String readerNo, String email, String registerDateStart, String registerDateEnd, int page, int size) {
         // Start with all readers
         List<Reader> readers = readerMapper.selectList(null);
 
