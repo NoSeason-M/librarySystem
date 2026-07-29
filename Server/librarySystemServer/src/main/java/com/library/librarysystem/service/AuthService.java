@@ -108,13 +108,12 @@ public class AuthService {
             throw new BusinessException("Passwords do not match");
         }
 
-        // Check username uniqueness (auto-generate from email prefix)
-        String username = generateUsername(req.getFirstName(), req.getLastName());
+        // Check username uniqueness
+        String username = req.getUsername().trim().toLowerCase();
         SysUser existing = userMapper.selectOne(
                 new LambdaQueryWrapper<SysUser>().eq(SysUser::getUsername, username));
         if (existing != null) {
-            // Fallback: add random suffix
-            username = username + (int)(Math.random() * 1000);
+            throw new BusinessException("Username is already taken");
         }
 
         // Check email uniqueness
@@ -143,7 +142,7 @@ public class AuthService {
         SysUser user = new SysUser();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(req.getPassword()));
-        user.setRealName(req.getFirstName() + " " + req.getLastName());
+        user.setRealName(req.getRealName() != null ? req.getRealName().trim() : username);
         user.setEmail(req.getEmail());
         user.setPhone(req.getPhone());
         user.setStatus(1); // enabled

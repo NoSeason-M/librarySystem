@@ -55,7 +55,7 @@ const statusDropdownOpen = ref(false)
 const showAddModal = ref(false)
 const saving = ref(false)
 const submitError = ref('')
-const addForm = ref({ title: '', author: '', isbn: '', categoryId: null as number | null, publisherId: null as number | null, publisherName: '', publishDate: '', price: null as number | null, pages: null as number | null, binding: '', language: '中文', summary: '' })
+const addForm = ref({ title: '', author: '', isbn: '', categoryId: null as number | null, publisherId: null as number | null, publisherName: '', publishDate: '', price: null as number | null, pages: null as number | null, binding: '', language: '中文', summary: '', readUrl: '' })
 const addCopies = ref<{ barcode: string; locationId: number | null; price: number | null; source: string }[]>([])
 const coverFile = ref<File | null>(null)
 const coverPreview = ref('')
@@ -66,7 +66,7 @@ const coverPreviewEdit = ref('')
 const showEditModal = ref(false)
 const editLoading = ref(false)
 const editError = ref('')
-const editForm = ref({ id: 0, title: '', author: '', isbn: '', categoryId: null as number | null, publisherId: null as number | null, publisherName: '', publishDate: '', price: null as number | null, pages: null as number | null, binding: '', language: '中文', summary: '' })
+const editForm = ref({ id: 0, title: '', author: '', isbn: '', categoryId: null as number | null, publisherId: null as number | null, publisherName: '', publishDate: '', price: null as number | null, pages: null as number | null, binding: '', language: '中文', summary: '', readUrl: '' })
 const editCopies = ref<any[]>([])
 const editNewCopy = ref({ barcode: '', locationId: null as number | null, price: null as number | null, source: '' })
 const addCopyLoading = ref(false)
@@ -132,7 +132,7 @@ function getStatusColor(book: BookItem) { return (book.availableCopies ?? 0) > 0
 // ===== Edit =====
 function openAddModal() {
   coverFile.value = null; coverPreview.value = ''
-  addForm.value = { title: '', author: '', isbn: '', categoryId: null, publisherId: null, publisherName: '', publishDate: '', price: null, pages: null, binding: '', language: '中文', summary: '' }
+  addForm.value = { title: '', author: '', isbn: '', categoryId: null, publisherId: null, publisherName: '', publishDate: '', price: null, pages: null, binding: '', language: '中文', summary: '', readUrl: '' }
   addCopies.value = [{ barcode: '', locationId: null, price: null, source: '采购' }]
   submitError.value = ''; showAddModal.value = true
 }
@@ -169,7 +169,7 @@ async function submitAddBook() {
 // ===== Edit =====
 function editBook(book: BookItem) {
   coverFileEdit.value = null; coverPreviewEdit.value = book.coverUrl || ''
-  editForm.value = { id: book.id, title: book.title, author: book.author, isbn: book.isbn || '', categoryId: book.categoryId || null, publisherId: book.publisherId || null, publisherName: book.publisherName || '', publishDate: book.publishDate || '', price: book.price, pages: book.pages || null, binding: book.binding || '', language: book.language || '中文', summary: book.summary || '' }
+  editForm.value = { id: book.id, title: book.title, author: book.author, isbn: book.isbn || '', categoryId: book.categoryId || null, publisherId: book.publisherId || null, publisherName: book.publisherName || '', publishDate: book.publishDate || '', price: book.price, pages: book.pages || null, binding: book.binding || '', language: book.language || '中文', summary: book.summary || '', readUrl: book.readUrl || '' }
   editError.value = ''; editCopies.value = []
   editNewCopy.value = { barcode: '', locationId: null, price: null, source: '采购' }
   // Load existing copies
@@ -383,6 +383,7 @@ function getSelectedCategoryName() { if (!selectedCategoryId.value) return '全�
             </div>
           </div>
           <div class="field"><label class="field-label">简介</label><div class="input-box"><textarea v-model="addForm.summary" class="input-textarea" placeholder="图书简介..." rows="3"></textarea></div></div>
+          <div class="field"><label class="field-label">在线阅读链接</label><div class="input-box"><input v-model="addForm.readUrl" type="url" placeholder="https://..." /></div></div>
 
           <!-- Copies Section -->
           <div class="section-divider"></div>
@@ -446,6 +447,7 @@ function getSelectedCategoryName() { if (!selectedCategoryId.value) return '全�
             </div>
           </div>
           <div class="field"><label class="field-label">简介</label><div class="input-box"><textarea v-model="editForm.summary" class="input-textarea" placeholder="图书简介..." rows="3"></textarea></div></div>
+          <div class="field"><label class="field-label">在线阅读链接</label><div class="input-box"><input v-model="editForm.readUrl" type="url" placeholder="https://..." /></div></div>
 
           <!-- Copies Section -->
           <div class="section-divider"></div>

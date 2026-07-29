@@ -28,6 +28,7 @@ public class BookInfo {
     private String summary;
     private String coverUrl;
     private String tableOfContents;
+    private String readUrl;
     private Integer totalCopies;
     private Integer availableCopies;
     private Integer borrowCount;

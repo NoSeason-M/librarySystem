@@ -89,6 +89,7 @@ public class BookService {
         book.setBinding((String) req.get("binding"));
         book.setLanguage((String) req.get("language"));
         book.setSummary((String) req.get("summary"));
+        if (req.containsKey("readUrl")) book.setReadUrl((String) req.get("readUrl"));
         book.setTotalCopies(0);
         book.setAvailableCopies(0);
         book.setBorrowCount(0);
@@ -148,6 +149,7 @@ public class BookService {
         if (req.containsKey("binding")) book.setBinding((String) req.get("binding"));
         if (req.containsKey("language")) book.setLanguage((String) req.get("language"));
         if (req.containsKey("summary")) book.setSummary((String) req.get("summary"));
+        if (req.containsKey("readUrl")) book.setReadUrl((String) req.get("readUrl"));
         bookInfoMapper.updateById(book);
     }
 
@@ -471,6 +473,7 @@ public class BookService {
         item.put("pages", book.getPages()); item.put("binding", book.getBinding());
         item.put("language", book.getLanguage()); item.put("ratingCount", book.getRatingCount());
         item.put("status", book.getStatus());
+        item.put("readUrl", book.getReadUrl());
         item.put("createTime", book.getCreateTime() != null ? book.getCreateTime().toString() : null);
         return item;
     }

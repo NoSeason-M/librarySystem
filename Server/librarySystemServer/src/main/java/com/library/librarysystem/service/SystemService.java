@@ -413,11 +413,22 @@ public class SystemService {
         a.setContent((String) req.get("content"));
         a.setType((String) req.getOrDefault("type", "general"));
         a.setTargetRoles((String) req.getOrDefault("targetRoles", "all"));
-        a.setTopFlag(req.getOrDefault("topFlag", 0) instanceof Integer ? (Integer) req.get("topFlag") : 0);
+        // Handle topFlag: may come as Integer, BigDecimal, or other Number type
+        Object topFlag = req.get("topFlag");
+        if (topFlag instanceof Number) {
+            a.setTopFlag(((Number) topFlag).intValue());
+        } else {
+            a.setTopFlag(0);
+        }
         a.setStatus(0);
         if (req.containsKey("publishTime") && req.get("publishTime") != null) {
-            a.setPublishTime(LocalDateTime.parse((String) req.get("publishTime")));
+            String pt = (String) req.get("publishTime");
+            if (!pt.isEmpty()) {
+                try { a.setPublishTime(LocalDateTime.parse(pt)); } catch (Exception ignored) {}
+            }
         }
+        // createBy is optional, let FK handle it (ON DELETE SET NULL)
+        a.setCreateBy(null);
         announcementMapper.insert(a);
         return a.getId();
     }
@@ -429,7 +440,10 @@ public class SystemService {
         if (req.containsKey("content")) a.setContent((String) req.get("content"));
         if (req.containsKey("type")) a.setType((String) req.get("type"));
         if (req.containsKey("targetRoles")) a.setTargetRoles((String) req.get("targetRoles"));
-        if (req.containsKey("topFlag")) a.setTopFlag((Integer) req.get("topFlag"));
+        if (req.containsKey("topFlag")) {
+            Object tf = req.get("topFlag");
+            a.setTopFlag(tf instanceof Number ? ((Number) tf).intValue() : 0);
+        }
         if (req.containsKey("status")) a.setStatus((Integer) req.get("status"));
         announcementMapper.updateById(a);
     }

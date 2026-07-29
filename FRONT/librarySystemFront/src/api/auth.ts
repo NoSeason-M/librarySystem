@@ -24,8 +24,8 @@ export interface CaptchaResult {
 }
 
 export interface RegisterParams {
-  firstName: string
-  lastName: string
+  username: string
+  realName: string
   email: string
   phone: string
   readerType: string

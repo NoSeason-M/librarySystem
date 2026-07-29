@@ -54,6 +54,11 @@ http.interceptors.response.use(
         window.location.href = '/login'
       }
     }
+    // Extract server error message from response body
+    const serverMsg = error.response?.data?.message
+    if (serverMsg) {
+      return Promise.reject(new Error(serverMsg))
+    }
     return Promise.reject(error)
   }
 )

@@ -18,7 +18,7 @@ public class ReaderController {
     private final ReaderService readerService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_LIBRARIAN', 'ROLE_CATALOGER')")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_LIBRARIAN')")
     public Result<Map<String, Object>> list(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long readerTypeId,

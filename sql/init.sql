@@ -297,6 +297,7 @@ CREATE TABLE book_info (
     summary          TEXT            DEFAULT NULL                COMMENT '内容简介',
     cover_url        VARCHAR(255)    DEFAULT NULL                COMMENT '封面图片URL',
     table_of_contents TEXT           DEFAULT NULL                COMMENT '目录',
+    read_url        VARCHAR(500)    DEFAULT NULL                COMMENT '在线阅读链接',
     total_copies     INT             DEFAULT 0                   COMMENT '总副本数',
     available_copies INT             DEFAULT 0                   COMMENT '可借数量',
     borrow_count     INT             DEFAULT 0                   COMMENT '累计借阅次数',
@@ -815,13 +816,13 @@ INSERT INTO publisher (id, name, short_name) VALUES
     (12, '上海译文出版社',   '上海译文');
 
 -- 8.3 图书信息 (6 本热门图书)
-INSERT INTO book_info (id, isbn, title, author, translator, publisher_id, category_id, publish_date, pages, price, binding, language, summary, total_copies, available_copies, borrow_count, rating, rating_count, status) VALUES
-    (1, '9787536692930', '三体',            '刘慈欣',        NULL,               11, 23, '2008-01-01', 302,  23.00, '平装', 'Chinese', '文化大革命如火如荼进行的同时，军方探寻外星文明的绝秘计划"红岸工程"取得了突破性进展。', 3, 2, 128, 4.8, 1024, 1),
-    (2, '9787544253994', '百年孤独',        '加西亚·马尔克斯', '范晔',          12, 24, '2011-06-01', 360,  39.50, '精装', 'Chinese', '魔幻现实主义文学代表作，描写了布恩迪亚家族七代人的传奇故事。', 2, 1, 85,  4.7, 856,  1),
-    (3, '9787111641247', '深入理解Java虚拟机', '周志明',      NULL,               2,  25, '2019-12-01', 540, 129.00, '平装', 'Chinese', '从Java虚拟机的整体架构出发，深入剖析其工作原理和实现细节。', 3, 1, 210, 4.9, 1520, 1),
-    (4, '9787111407010', '算法导论',        'Thomas H.Cormen', '殷建平等',       2,  25, '2012-12-01', 1312, 128.00, '精装', 'Chinese', '全面介绍了多种算法的设计和分析方法。', 2, 1, 156, 4.8, 2100, 1),
-    (5, '9787508660752', '人类简史',        '尤瓦尔·赫拉利',  '林俊宏',          5,  26, '2014-11-01', 440,  68.00, '平装', 'Chinese', '从十万年前有生命迹象开始到21世纪资本、科技交织的人类发展史。', 2, 1, 92,  4.6, 680,  1),
-    (6, '9787020024759', '围城',            '钱钟书',         NULL,               1,  23, '1991-02-01', 359,  29.80, '平装', 'Chinese', '一幅栩栩如生的市井百态图，人生的酸甜苦辣千般滋味均在其中。', 2, 2, 67,  4.5, 450,  1);
+INSERT INTO book_info (id, isbn, title, author, translator, publisher_id, category_id, publish_date, pages, price, binding, language, summary, total_copies, available_copies, borrow_count, rating, rating_count, status, read_url) VALUES
+    (1, '9787536692930', '三体',            '刘慈欣',        NULL,               11, 23, '2008-01-01', 302,  23.00, '平装', 'Chinese', '文化大革命如火如荼进行的同时，军方探寻外星文明的绝秘计划"红岸工程"取得了突破性进展。', 3, 2, 128, 4.8, 1024, 1, 'https://weread.qq.com/web/bookDetail/bd532d208d6b70bd5e0d9b1'),
+    (2, '9787544253994', '百年孤独',        '加西亚·马尔克斯', '范晔',          12, 24, '2011-06-01', 360,  39.50, '精装', 'Chinese', '魔幻现实主义文学代表作，描写了布恩迪亚家族七代人的传奇故事。', 2, 1, 85,  4.7, 856,  1, 'https://weread.qq.com/web/bookDetail/3a632c30816a3a6c9g01471'),
+    (3, '9787111641247', '深入理解Java虚拟机', '周志明',      NULL,               2,  25, '2019-12-01', 540, 129.00, '平装', 'Chinese', '从Java虚拟机的整体架构出发，深入剖析其工作原理和实现细节。', 3, 1, 210, 4.9, 1520, 1, 'https://weread.qq.com/web/bookDetail/c3c32c30816a3a6c9g01472'),
+    (4, '9787111407010', '算法导论',        'Thomas H.Cormen', '殷建平等',       2,  25, '2012-12-01', 1312, 128.00, '精装', 'Chinese', '全面介绍了多种算法的设计和分析方法。', 2, 1, 156, 4.8, 2100, 1, 'https://weread.qq.com/web/bookDetail/3f632c30816a3a6c9g01473'),
+    (5, '9787508660752', '人类简史',        '尤瓦尔·赫拉利',  '林俊宏',          5,  26, '2014-11-01', 440,  68.00, '平装', 'Chinese', '从十万年前有生命迹象开始到21世纪资本、科技交织的人类发展史。', 2, 1, 92,  4.6, 680,  1, 'https://weread.qq.com/web/bookDetail/3c932c30816a3a6c9g01474'),
+    (6, '9787020024759', '围城',            '钱钟书',         NULL,               1,  23, '1991-02-01', 359,  29.80, '平装', 'Chinese', '一幅栩栩如生的市井百态图，人生的酸甜苦辣千般滋味均在其中。', 2, 2, 67,  4.5, 450,  1, 'https://weread.qq.com/web/bookDetail/4c232c30816a3a6c9g01475');
 
 -- 8.4 图书副本 (每本书 2~3 本，含多种状态)
 INSERT INTO book_copy (book_id, barcode, location_id, status, price, purchase_date, source) VALUES
@@ -888,5 +889,12 @@ INSERT INTO fine_record (reader_id, borrow_record_id, fine_type, amount, paid, w
 -- 记录2: 李华 深入理解JVM 副本006 逾期 (教师 rate=0.00, 但演示用仍生成一条)
 INSERT INTO fine_record (reader_id, borrow_record_id, fine_type, amount, paid, waive, operator_id, remark, create_time) VALUES
     (2, 5, 'overdue', 7.00, 0, 0, 2, '深入理解JVM逾期14天自动生成', DATE_SUB(NOW(), INTERVAL 5 DAY));
+
+-- ============================================================================
+-- 9. 数据库迁移语句（用于已有数据库升级）
+-- ============================================================================
+
+-- 已有数据库升级: 如果报错说 read_url 已存在则忽略
+ALTER TABLE book_info ADD COLUMN read_url VARCHAR(500) DEFAULT NULL COMMENT '在线阅读链接' AFTER table_of_contents;
 
 SET FOREIGN_KEY_CHECKS = 1;

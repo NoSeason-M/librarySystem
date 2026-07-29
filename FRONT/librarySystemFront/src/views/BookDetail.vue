@@ -212,6 +212,7 @@ function statusBadgeColor(status: string): string {
             <!-- Actions -->
             <div class="action-row">
               <button class="btn-borrow" @click="handleReserveOrBorrow">预约此书</button>
+              <a v-if="book?.readUrl" :href="book.readUrl" target="_blank" class="btn-read">📖 开始阅读</a>
               <button class="btn-fav" @click="toggleFavorite">{{ isFavorited ? '❤️' : '♡' }}</button>
             </div>
           </div>
@@ -467,6 +468,19 @@ function statusBadgeColor(status: string): string {
   transition: opacity 0.15s;
 }
 .btn-borrow:hover { opacity: 0.9; }
+
+.btn-read {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 14px 24px; border-radius: 10px;
+  background: var(--success, #34D399);
+  color: var(--text-inverse, #FFF);
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 14px; font-weight: 600;
+  border: none; cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.btn-read:hover { opacity: 0.9; color: var(--text-inverse, #FFF); }
 
 .btn-fav {
   width: 48px;

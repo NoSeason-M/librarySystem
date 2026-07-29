@@ -7,26 +7,39 @@ const route = useRoute()
 const realName = ref(localStorage.getItem('realName') || 'Admin')
 const userInitials = ref(realName.value.charAt(0).toUpperCase())
 
-const adminNav = [
-  { icon: '📊', label: '工作台', route: '/admin' },
-  { icon: '📖', label: '借还管理', route: '/admin/borrow-return' },
-  { icon: '📚', label: '图书管理', route: '/admin/books' },
-  { icon: '👥', label: '读者管理', route: '/admin/readers' },
-  { icon: '📈', label: '统计分析', route: '/admin/statistics' },
-  { icon: '💰', label: '罚款管理', route: '/admin/fines' },
-  { icon: '⚙️', label: '系统设置', route: '/admin/settings' },
+// Get user roles from localStorage
+const userRoles = computed(() => {
+  try { return JSON.parse(localStorage.getItem('roles') || '[]') as string[] }
+  catch { return [] }
+})
+
+function hasRole(roles: string[]): boolean {
+  return roles.some(r => userRoles.value.includes(r))
+}
+
+interface NavItem {
+  icon: string; label: string; route?: string; roles: string[]
+}
+
+const allNavItems: NavItem[] = [
+  { icon: '📊', label: '工作台', route: '/admin', roles: ['ROLE_ADMIN', 'ROLE_LIBRARIAN', 'ROLE_CATALOGER'] },
+  { icon: '📖', label: '借还管理', route: '/admin/borrow-return', roles: ['ROLE_ADMIN', 'ROLE_LIBRARIAN'] },
+  { icon: '📚', label: '图书管理', route: '/admin/books', roles: ['ROLE_ADMIN', 'ROLE_CATALOGER'] },
+  { icon: '👥', label: '读者管理', route: '/admin/readers', roles: ['ROLE_ADMIN', 'ROLE_LIBRARIAN'] },
+  { icon: '📈', label: '统计分析', route: '/admin/statistics', roles: ['ROLE_ADMIN', 'ROLE_LIBRARIAN', 'ROLE_CATALOGER'] },
+  { icon: '💰', label: '罚款管理', route: '/admin/fines', roles: ['ROLE_ADMIN', 'ROLE_LIBRARIAN'] },
+  { icon: '⚙️', label: '系统设置', route: '/admin/settings', roles: ['ROLE_ADMIN'] },
 ]
 
-function navigateTo(item: { label: string; route?: string }) {
+const adminNav = computed(() => allNavItems.filter(item => hasRole(item.roles)))
+
+function navigateTo(item: NavItem) {
   if (item.route) router.push(item.route)
 }
 
-function isActive(item: { label: string; route?: string }): boolean {
+function isActive(item: NavItem): boolean {
   if (!item.route) return false
-  // 工作台精确匹配 /admin，其他项匹配前缀
-  if (item.route === '/admin') {
-    return route.path === '/admin'
-  }
+  if (item.route === '/admin') return route.path === '/admin'
   return route.path.startsWith(item.route)
 }
 </script>

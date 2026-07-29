@@ -7,8 +7,8 @@ import type { LoginResult } from '../api/auth'
 const router = useRouter()
 
 const form = reactive({
-  firstName: '',
-  lastName: '',
+  username: '',
+  realName: '',
   email: '',
   phone: '',
   readerType: 'STUDENT',
@@ -29,8 +29,12 @@ const readerTypes = [
 ]
 
 function validate(): boolean {
-  if (!form.firstName.trim() || !form.lastName.trim()) {
-    errorMsg.value = 'Please enter your full name'
+  if (!form.username.trim()) {
+    errorMsg.value = 'Please enter your username'
+    return false
+  }
+  if (!form.realName.trim()) {
+    errorMsg.value = 'Please enter your real name'
     return false
   }
   if (!form.email.trim()) {
@@ -68,8 +72,8 @@ async function handleRegister() {
   loading.value = true
   try {
     const result = await registerApi({
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
+      username: form.username.trim(),
+      realName: form.realName.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
       readerType: form.readerType,
@@ -167,18 +171,18 @@ function goToLogin() {
 
         <!-- Form fields (hidden after registration) -->
         <template v-if="!registered">
-        <!-- Name Row -->
+        <!-- Username Row -->
         <div class="row-2col">
           <div class="field">
-            <label class="field-label">First Name</label>
+            <label class="field-label">Username</label>
             <div class="input-box">
-              <input v-model="form.firstName" type="text" placeholder="John" />
+              <input v-model="form.username" type="text" placeholder="e.g. zhangsan" />
             </div>
           </div>
           <div class="field">
-            <label class="field-label">Last Name</label>
+            <label class="field-label">Real Name</label>
             <div class="input-box">
-              <input v-model="form.lastName" type="text" placeholder="Doe" />
+              <input v-model="form.realName" type="text" placeholder="e.g. Zhang San" />
             </div>
           </div>
         </div>
