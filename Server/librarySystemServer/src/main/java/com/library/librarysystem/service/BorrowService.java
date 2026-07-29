@@ -27,6 +27,7 @@ public class BorrowService {
     private final FineRecordMapper fineRecordMapper;
     private final SysUserMapper userMapper;
     private final ReservationMapper reservationMapper;
+    private final SysConfigMapper configMapper;
 
     // ==================== Reader-facing ====================
 
@@ -490,10 +491,11 @@ public class BorrowService {
             throw new BusinessException("Book is overdue — cannot renew, please return it first");
         }
 
-        // Check due date within renewal window (≤ 7 days)
+        // Check due date within renewal window (configurable)
+        int renewAdvanceDays = getConfigInt("borrow.renew_advance_days", 7);
         long daysUntilDue = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), record.getDueDate());
-        if (daysUntilDue > 7) {
-            throw new BusinessException("Book can only be renewed within 7 days of due date (currently " + daysUntilDue + " days left)");
+        if (daysUntilDue > renewAdvanceDays) {
+            throw new BusinessException("Book can only be renewed within " + renewAdvanceDays + " days of due date (currently " + daysUntilDue + " days left)");
         }
 
         // Get reader type for renewal settings
@@ -531,6 +533,14 @@ public class BorrowService {
     }
 
     // ==================== Helpers ====================
+
+    private int getConfigInt(String key, int defaultValue) {
+        SysConfig config = configMapper.selectOne(
+                new LambdaQueryWrapper<SysConfig>().eq(SysConfig::getConfigKey, key));
+        if (config == null || config.getConfigValue() == null) return defaultValue;
+        try { return Integer.parseInt(config.getConfigValue()); }
+        catch (NumberFormatException e) { return defaultValue; }
+    }
 
     private String getCardStatusLabel(Integer status) {
         if (status == null) return "Normal";

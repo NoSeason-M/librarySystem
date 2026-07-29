@@ -8,7 +8,7 @@ export interface BookItem {
   availableCopies: number; borrowCount: number; rating: number | null
   ratingCount?: number | null; summary: string | null
   categoryName: string | null; categoryId?: number | null
-  publisherName?: string | null; status?: number; createTime?: string | null
+  publisherName?: string | null; publisherId?: number | null; status?: number; createTime?: string | null
 }
 
 export interface BookCopyItem {

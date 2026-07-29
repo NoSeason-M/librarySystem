@@ -66,7 +66,22 @@ public class BookService {
         book.setIsbn((String) req.get("isbn"));
         book.setTitle((String) req.get("title"));
         book.setAuthor((String) req.get("author"));
-        book.setPublisherId(req.get("publisherId") != null ? ((Number) req.get("publisherId")).longValue() : null);
+        // Handle publisher: if publisherId provided use it; if publisherName provided, find or create
+        if (req.containsKey("publisherId") && req.get("publisherId") != null) {
+            book.setPublisherId(((Number) req.get("publisherId")).longValue());
+        } else if (req.containsKey("publisherName") && req.get("publisherName") != null && !((String) req.get("publisherName")).isEmpty()) {
+            String name = (String) req.get("publisherName");
+            Publisher existingPub = publisherMapper.selectOne(
+                    new LambdaQueryWrapper<Publisher>().eq(Publisher::getName, name).last("LIMIT 1"));
+            if (existingPub != null) {
+                book.setPublisherId(existingPub.getId());
+            } else {
+                Publisher newPub = new Publisher();
+                newPub.setName(name);
+                publisherMapper.insert(newPub);
+                book.setPublisherId(newPub.getId());
+            }
+        }
         book.setCategoryId(req.get("categoryId") != null ? ((Number) req.get("categoryId")).longValue() : null);
         book.setPublishDate(req.get("publishDate") != null ? LocalDate.parse((String) req.get("publishDate")) : null);
         book.setPrice(req.get("price") != null ? java.math.BigDecimal.valueOf(((Number) req.get("price")).doubleValue()) : null);
@@ -79,6 +94,28 @@ public class BookService {
         book.setBorrowCount(0);
         book.setStatus(1);
         bookInfoMapper.insert(book);
+
+        // Create copies if provided
+        List<Map<String, Object>> copies = (List<Map<String, Object>>) req.get("copies");
+        if (copies != null && !copies.isEmpty()) {
+            int total = 0, avail = 0;
+            for (Map<String, Object> c : copies) {
+                BookCopy copy = new BookCopy();
+                copy.setBookId(book.getId());
+                copy.setBarcode((String) c.get("barcode"));
+                copy.setLocationId(c.get("locationId") != null ? ((Number) c.get("locationId")).longValue() : null);
+                copy.setPrice(c.get("price") != null ? java.math.BigDecimal.valueOf(((Number) c.get("price")).doubleValue()) : null);
+                copy.setStatus("in");
+                if (c.containsKey("source")) copy.setSource((String) c.get("source"));
+                bookCopyMapper.insert(copy);
+                total++;
+                avail++;
+            }
+            book.setTotalCopies(total);
+            book.setAvailableCopies(avail);
+            bookInfoMapper.updateById(book);
+        }
+
         return book.getId();
     }
 
@@ -89,7 +126,21 @@ public class BookService {
         if (req.containsKey("title")) book.setTitle((String) req.get("title"));
         if (req.containsKey("author")) book.setAuthor((String) req.get("author"));
         if (req.containsKey("isbn")) book.setIsbn((String) req.get("isbn"));
-        if (req.containsKey("publisherId")) book.setPublisherId(req.get("publisherId") != null ? ((Number) req.get("publisherId")).longValue() : null);
+        if (req.containsKey("publisherId")) {
+            book.setPublisherId(req.get("publisherId") != null ? ((Number) req.get("publisherId")).longValue() : null);
+        } else if (req.containsKey("publisherName") && req.get("publisherName") != null && !((String) req.get("publisherName")).isEmpty()) {
+            String name = (String) req.get("publisherName");
+            Publisher existingPub = publisherMapper.selectOne(
+                    new LambdaQueryWrapper<Publisher>().eq(Publisher::getName, name).last("LIMIT 1"));
+            if (existingPub != null) {
+                book.setPublisherId(existingPub.getId());
+            } else {
+                Publisher newPub = new Publisher();
+                newPub.setName(name);
+                publisherMapper.insert(newPub);
+                book.setPublisherId(newPub.getId());
+            }
+        }
         if (req.containsKey("categoryId")) book.setCategoryId(req.get("categoryId") != null ? ((Number) req.get("categoryId")).longValue() : null);
         if (req.containsKey("publishDate")) book.setPublishDate(req.get("publishDate") != null ? LocalDate.parse((String) req.get("publishDate")) : null);
         if (req.containsKey("price")) book.setPrice(req.get("price") != null ? java.math.BigDecimal.valueOf(((Number) req.get("price")).doubleValue()) : null);
@@ -106,6 +157,65 @@ public class BookService {
         if (book == null) throw new BusinessException("Book not found");
         bookInfoMapper.deleteById(id);
         bookCopyMapper.delete(new LambdaQueryWrapper<BookCopy>().eq(BookCopy::getBookId, id));
+    }
+
+    // ==================== Copy Management ====================
+
+    @Transactional
+    public Map<String, Object> addBookCopy(Long bookId, Map<String, Object> req) {
+        BookInfo book = bookInfoMapper.selectById(bookId);
+        if (book == null) throw new BusinessException("Book not found");
+
+        String barcode = (String) req.get("barcode");
+        if (barcode == null || barcode.isEmpty()) throw new BusinessException("Barcode is required");
+
+        // Check duplicate barcode
+        BookCopy existing = bookCopyMapper.selectOne(
+                new LambdaQueryWrapper<BookCopy>().eq(BookCopy::getBarcode, barcode));
+        if (existing != null) throw new BusinessException("Barcode already exists: " + barcode);
+
+        BookCopy copy = new BookCopy();
+        copy.setBookId(bookId);
+        copy.setBarcode(barcode);
+        copy.setLocationId(req.get("locationId") != null ? ((Number) req.get("locationId")).longValue() : null);
+        copy.setPrice(req.get("price") != null ? java.math.BigDecimal.valueOf(((Number) req.get("price")).doubleValue()) : null);
+        copy.setStatus("in");
+        if (req.containsKey("source")) copy.setSource((String) req.get("source"));
+        bookCopyMapper.insert(copy);
+
+        // Update book counts
+        book.setTotalCopies(book.getTotalCopies() != null ? book.getTotalCopies() + 1 : 1);
+        book.setAvailableCopies(book.getAvailableCopies() != null ? book.getAvailableCopies() + 1 : 1);
+        bookInfoMapper.updateById(book);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", copy.getId());
+        result.put("barcode", copy.getBarcode());
+        result.put("status", copy.getStatus());
+        if (copy.getLocationId() != null) {
+            Location loc = locationMapper.selectById(copy.getLocationId());
+            result.put("locationName", loc != null ? loc.getName() : null);
+        }
+        return result;
+    }
+
+    @Transactional
+    public void deleteBookCopy(Long copyId) {
+        BookCopy copy = bookCopyMapper.selectById(copyId);
+        if (copy == null) throw new BusinessException("Copy not found");
+        if (!"in".equals(copy.getStatus())) {
+            throw new BusinessException("Cannot delete a copy that is not available (status: " + copy.getStatus() + ")");
+        }
+
+        bookCopyMapper.deleteById(copyId);
+
+        // Update book counts
+        BookInfo book = bookInfoMapper.selectById(copy.getBookId());
+        if (book != null) {
+            book.setTotalCopies(Math.max(0, (book.getTotalCopies() != null ? book.getTotalCopies() : 1) - 1));
+            book.setAvailableCopies(Math.max(0, (book.getAvailableCopies() != null ? book.getAvailableCopies() : 1) - 1));
+            bookInfoMapper.updateById(book);
+        }
     }
 
     // ==================== Cover Upload ====================

@@ -17,6 +17,9 @@ public class BookCopy {
     private String status;  // in, borrowed, reserved, maintenance, lost, discarded
     private java.math.BigDecimal price;
     private java.time.LocalDate purchaseDate;
+    private String source;
+    private String remark;
+    private Integer damageLevel;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;

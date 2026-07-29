@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { getFines } from '../api/fines'
+import { getReaderFines } from '../api/fines'
 
 const loading = ref(true)
 const activeTab = ref('未缴罚款')
@@ -11,7 +11,7 @@ const tabs = ['未缴罚款', '已缴记录']
 onMounted(async () => {
   const readerNo = localStorage.getItem('readerNo') || 'RD20260001'
   try {
-    fines.value = await getFines(readerNo)
+    fines.value = await getReaderFines(readerNo)
   } catch {
     fines.value = getDemoFines()
   } finally {

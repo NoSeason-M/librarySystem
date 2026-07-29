@@ -24,6 +24,7 @@ public class ReaderService {
     private final SysUserMapper userMapper;
     private final SysRoleMapper roleMapper;
     private final SysUserRoleMapper userRoleMapper;
+    private final FineRecordMapper fineRecordMapper;
     private final PasswordEncoder passwordEncoder;
 
     public Map<String, Object> listReaders(String keyword, Long readerTypeId, Integer cardStatus, String readerNo, String email, String registerDateStart, String registerDateEnd, int page, int size) {
@@ -187,6 +188,12 @@ public class ReaderService {
         item.put("cardStatusLabel", getCardStatusLabel(reader.getCardStatus()));
         item.put("currentBorrowed", reader.getCurrentBorrowed() != null ? reader.getCurrentBorrowed() : 0);
         item.put("totalBorrowed", reader.getTotalBorrowed());
+        // Calculate total fines from fine_record table for accuracy
+        double totalFines = fineRecordMapper.selectList(
+                new LambdaQueryWrapper<com.library.librarysystem.entity.FineRecord>()
+                        .eq(com.library.librarysystem.entity.FineRecord::getReaderId, reader.getId())
+        ).stream().mapToDouble(f -> f.getAmount() != null ? f.getAmount().doubleValue() : 0).sum();
+        item.put("totalFines", totalFines);
         item.put("registerDate", reader.getRegisterDate() != null ? reader.getRegisterDate().toString() : null);
         item.put("expireDate", reader.getExpireDate() != null ? reader.getExpireDate().toString() : null);
 

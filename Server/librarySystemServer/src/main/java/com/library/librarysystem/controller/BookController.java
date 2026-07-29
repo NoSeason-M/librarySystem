@@ -89,4 +89,19 @@ public class BookController {
     @GetMapping("/{id}/copies") public Result<List<Map<String, Object>>> copies(@PathVariable Long id) {
         return Result.success(bookService.getBookCopies(id));
     }
+
+    // ==================== Copy Management ====================
+
+    @PostMapping("/{id}/copies")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_CATALOGER')")
+    public Result<Map<String, Object>> addCopy(@PathVariable Long id, @RequestBody Map<String, Object> req) {
+        return Result.success(bookService.addBookCopy(id, req));
+    }
+
+    @DeleteMapping("/copies/{copyId}")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_CATALOGER')")
+    public Result<Void> deleteCopy(@PathVariable Long copyId) {
+        bookService.deleteBookCopy(copyId);
+        return Result.success();
+    }
 }

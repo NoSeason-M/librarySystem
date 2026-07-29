@@ -120,8 +120,8 @@ function goHome() {
       <span class="nav__logo" @click="goHome">📚 LibraryOS</span>
       <div class="nav__links">
         <span class="nav__link" @click="goHome">首页</span>
-        <span class="nav__link" @click="goHome">浏览</span>
-        <span class="nav__link" @click="goHome">我的</span>
+        <span class="nav__link" @click="router.push('/books')">浏览</span>
+        <span class="nav__link" @click="goToDashboard">我的</span>
         <span class="nav__link nav__link--active">个人中心</span>
       </div>
       <div class="nav__user">
@@ -134,7 +134,10 @@ function goHome() {
     <main class="main">
       <!-- Page Header -->
       <div class="page-header">
-        <h1 class="page-title">个人设置</h1>
+        <div class="page-header-row">
+          <button class="btn-back" @click="goToDashboard">←</button>
+          <h1 class="page-title">个人设置</h1>
+        </div>
         <p class="page-subtitle">管理你的个人信息和偏好设置</p>
       </div>
 
@@ -372,6 +375,31 @@ function goHome() {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.page-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-back {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bg-primary,#FFF);
+  border: 1px solid var(--border,#E5E7EB);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary,#666);
+  flex-shrink: 0;
+}
+
+.btn-back:hover {
+  background: var(--bg-secondary,#F7F8FA);
 }
 
 .page-title {

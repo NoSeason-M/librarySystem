@@ -3,6 +3,9 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { listReaders, getReaderTypes, createReader, updateReader, cardAction } from '../api/readers'
 import type { ReaderItem, ReaderType } from '../api/readers'
+import { getCurrentBorrowing } from '../api/borrow'
+
+import http from '../api/index'
 
 const router = useRouter()
 
@@ -143,6 +146,40 @@ function getCardStatusLabel(status: number | undefined): string {
 
 function getInitials(name: string): string {
   return (name || '?').charAt(0).toUpperCase()
+}
+
+// ===== Detail Modal =====
+const showDetailModal = ref(false)
+const detailReader = ref<any>(null)
+const detailReaderInfo = ref<any>(null)
+const detailBorrowings = ref<any[]>([])
+const detailLoading = ref(false)
+
+async function openDetail(reader: ReaderItem) {
+  detailLoading.value = true
+  showDetailModal.value = true
+  try {
+    const [info, borrowings] = await Promise.all([
+      http.get('/readers/' + reader.id),
+      getCurrentBorrowing(reader.readerNo).catch(() => []),
+    ])
+    detailReader.value = reader
+    detailReaderInfo.value = info
+    detailBorrowings.value = borrowings
+  } catch {
+    detailReader.value = reader
+    detailReaderInfo.value = null
+    detailBorrowings.value = []
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+function closeDetail() {
+  showDetailModal.value = false
+  detailReader.value = null
+  detailReaderInfo.value = null
+  detailBorrowings.value = []
 }
 
 // ===== Card Action Modal =====
@@ -298,7 +335,7 @@ onMounted(() => {
           <span class="th" style="width:130px">电话</span>
           <span class="th" style="width:150px">邮箱</span>
           <span class="th-spacer"></span>
-          <span class="th th--right" style="width:110px">操作</span>
+          <span class="th th--right" style="width:150px">操作</span>
         </div>
 
         <div v-if="loading" class="table-empty">加载中...</div>
@@ -315,7 +352,8 @@ onMounted(() => {
           <span class="td td--secondary" style="width:130px">{{ reader.phone || '-' }}</span>
           <span class="td td--secondary" style="width:150px">{{ reader.email || '-' }}</span>
           <div class="td-spacer"></div>
-          <div class="td td--actions" style="width:110px">
+          <div class="td td--actions" style="width:150px">
+            <button class="btn-action btn-action--view" @click="openDetail(reader)">查看</button>
             <button class="btn-action btn-action--edit" @click="openEditModal(reader)">编辑</button>
             <button class="btn-action btn-action--card" @click="openCardModal(reader)">挂失</button>
           </div>
@@ -459,6 +497,59 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- ===== Detail Modal ===== -->
+    <div v-if="showDetailModal" class="modal-overlay" @click.self="closeDetail">
+      <div class="modal modal--lg">
+        <div class="modal__header">
+          <h2 class="modal__title">{{ detailReader?.realName || '读者详情' }}</h2>
+          <button class="modal__close" @click="closeDetail">✕</button>
+        </div>
+        <div class="modal__body">
+          <div v-if="detailLoading" class="table-empty">加载中...</div>
+          <template v-if="!detailLoading && detailReader">
+            <!-- Reader Profile -->
+            <div class="detail-profile">
+              <div class="detail-avatar">{{ getInitials(detailReader.realName) }}</div>
+              <div class="detail-profile-fields">
+                <div class="detail-field"><span class="detail-key">姓名</span><span class="detail-val">{{ detailReader.realName }}</span></div>
+                <div class="detail-field"><span class="detail-key">读者证号</span><span class="detail-val">{{ detailReader.readerNo }}</span></div>
+                <div class="detail-field"><span class="detail-key">读者类型</span><span class="detail-val">{{ detailReader.readerTypeName || '-' }}</span></div>
+                <div class="detail-field"><span class="detail-key">卡状态</span><span class="detail-val"><span class="status-badge" :style="{ background: getCardStatusColor(detailReader.cardStatus) }">{{ getCardStatusLabel(detailReader.cardStatus) }}</span></span></div>
+                <div class="detail-field"><span class="detail-key">电话</span><span class="detail-val">{{ detailReader.phone || '-' }}</span></div>
+                <div class="detail-field"><span class="detail-key">邮箱</span><span class="detail-val">{{ detailReader.email || '-' }}</span></div>
+                <div class="detail-field"><span class="detail-key">注册日期</span><span class="detail-val">{{ detailReader.registerDate || '-' }}</span></div>
+                <div class="detail-field"><span class="detail-key">有效期至</span><span class="detail-val">{{ detailReader.expireDate || '-' }}</span></div>
+              </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="detail-stats">
+              <div class="detail-stat-card"><span class="detail-stat-label">累计借阅</span><span class="detail-stat-value">{{ detailReader.totalBorrowed ?? 0 }} 次</span></div>
+              <div class="detail-stat-card"><span class="detail-stat-label">当前在借</span><span class="detail-stat-value">{{ detailReader.currentBorrowed ?? 0 }} 本</span></div>
+              <div class="detail-stat-card"><span class="detail-stat-label">累计罚款</span><span class="detail-stat-value" style="color:var(--danger,#F87171)">{{ detailReader.totalFines ? '¥' + detailReader.totalFines : '¥0.00' }}</span></div>
+            </div>
+
+            <!-- Current Borrowings -->
+            <div class="detail-section">
+              <h3 class="detail-section-title">当前借阅</h3>
+              <div v-if="detailBorrowings.length === 0" class="table-empty">暂无借阅记录</div>
+              <div v-for="b in detailBorrowings" :key="b.id" class="detail-borrow-row">
+                <span class="detail-borrow-icon">📖</span>
+                <div class="detail-borrow-info">
+                  <span class="detail-borrow-title">{{ b.bookTitle }}</span>
+                  <span class="detail-borrow-due">应还：{{ b.dueDate }} {{ b.overdue ? '(逾期' + b.overdueDays + '天)' : '(剩余' + b.remainingDays + '天)' }}</span>
+                </div>
+                <span :class="['detail-borrow-status', { 'detail-borrow-status--overdue': b.overdue }]">
+                  {{ b.overdue ? '逾期' : '在借' }}
+                </span>
+              </div>
+            </div>
+          </template>
+        </div>
+        <div class="modal__footer"><button class="btn-primary" @click="closeDetail">关闭</button></div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -508,6 +599,7 @@ onMounted(() => {
 
 .btn-action { padding: 5px 8px; border-radius: 6px; border: none; cursor: pointer; font-family: var(--font-sans, Inter); font-size: 10px; font-weight: 500; transition: opacity 0.15s; }
 .btn-action:hover { opacity: 0.8; }
+.btn-action--view { background: rgba(74,159,216,0.06); color: var(--accent, #4A9FD8); }
 .btn-action--edit { background: var(--accent-light, #E8F4FD); color: var(--accent, #4A9FD8); }
 .btn-action--card { background: rgba(74, 159, 216, 0.08); color: var(--accent, #4A9FD8); }
 
@@ -570,4 +662,26 @@ onMounted(() => {
 .adv-field label { font-size: 11px; color: var(--text-muted,#888); font-weight: 500; }
 .adv-field input, .adv-field select { padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border,#E5E7EB); background: var(--bg-secondary,#F7F8FA); font-family: var(--font-sans,Inter); font-size: 12px; color: var(--text-primary,#1A1A1A); outline: none; }
 .adv-field input:focus, .adv-field select:focus { border-color: var(--accent,#4A9FD8); }
+
+/* Detail Modal */
+.modal--lg { max-width: 640px; }
+.detail-profile { display: flex; gap: 24px; align-items: center; }
+.detail-avatar { width: 72px; height: 72px; border-radius: 999px; background: var(--accent-light,#E8F4FD); display: flex; align-items: center; justify-content: center; font-family: var(--font-sans,Inter); font-size: 28px; font-weight: 600; color: var(--accent,#4A9FD8); flex-shrink: 0; }
+.detail-profile-fields { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.detail-field { display: flex; flex-direction: column; gap: 2px; }
+.detail-key { font-family: var(--font-sans,Inter); font-size: 11px; color: var(--text-muted,#888); }
+.detail-val { font-family: var(--font-sans,Inter); font-size: 13px; font-weight: 500; color: var(--text-primary,#1A1A1A); display: flex; align-items: center; gap: 6px; }
+.detail-stats { display: flex; gap: 12px; }
+.detail-stat-card { flex: 1; padding: 14px; background: var(--bg-secondary,#F7F8FA); border-radius: 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.detail-stat-label { font-family: var(--font-sans,Inter); font-size: 11px; color: var(--text-muted,#888); }
+.detail-stat-value { font-family: var(--font-mono,'Geist Mono',monospace); font-size: 18px; font-weight: 700; color: var(--text-primary,#1A1A1A); }
+.detail-section { display: flex; flex-direction: column; gap: 8px; }
+.detail-section-title { font-family: var(--font-sans,Inter); font-size: 15px; font-weight: 600; color: var(--text-primary,#1A1A1A); margin: 0; }
+.detail-borrow-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--bg-secondary,#F7F8FA); border-radius: 10px; }
+.detail-borrow-icon { font-size: 20px; }
+.detail-borrow-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.detail-borrow-title { font-family: var(--font-sans,Inter); font-size: 13px; font-weight: 500; color: var(--text-primary,#1A1A1A); }
+.detail-borrow-due { font-family: var(--font-sans,Inter); font-size: 11px; color: var(--text-muted,#888); }
+.detail-borrow-status { font-family: var(--font-sans,Inter); font-size: 12px; font-weight: 500; color: var(--success,#34D399); padding: 4px 10px; border-radius: 999px; background: rgba(52,211,153,0.12); }
+.detail-borrow-status--overdue { color: var(--danger,#F87171); background: rgba(248,113,113,0.12); }
 </style>

@@ -137,19 +137,49 @@ public class StatisticsService {
         long totalBooks = bookInfoMapper.selectCount(null);
         long totalCopies = bookCopyMapper.selectCount(null);
 
-        List<Category> categories = categoryMapper.selectList(
-                new LambdaQueryWrapper<Category>().eq(Category::getLevel, 1));
-        List<Map<String, Object>> catDist = new ArrayList<>();
-        for (Category cat : categories) {
-            long count = bookInfoMapper.selectCount(
-                    new LambdaQueryWrapper<BookInfo>().eq(BookInfo::getCategoryId, cat.getId()));
-            if (count > 0) {
-                Map<String, Object> item = new HashMap<>();
-                item.put("name", cat.getName());
-                item.put("count", count);
-                item.put("percentage", totalBooks > 0 ? Math.round(count * 100.0 / totalBooks * 10) / 10.0 : 0);
-                catDist.add(item);
+        List<Category> allCategories = categoryMapper.selectList(null);
+        // Build parent map: child id -> root parent id
+        Map<Long, Long> childToRoot = new HashMap<>();
+        for (Category c : allCategories) {
+            if (c.getLevel() == 1) {
+                childToRoot.put(c.getId(), c.getId());
             }
+        }
+        for (Category c : allCategories) {
+            if (c.getLevel() > 1) {
+                // Walk up to root
+                Long rootId = c.getParentId();
+                while (rootId != null && rootId != 0 && !childToRoot.containsKey(rootId)) {
+                    final Long pid = rootId;
+                    Category parent = allCategories.stream()
+                            .filter(cat -> cat.getId().equals(pid)).findFirst().orElse(null);
+                    rootId = parent != null ? parent.getParentId() : 0L;
+                }
+                childToRoot.put(c.getId(), rootId != null && rootId != 0 ? rootId : c.getId());
+            }
+        }
+
+        // Count books per root category
+        List<BookInfo> allBooks = bookInfoMapper.selectList(null);
+        Map<Long, Long> rootCount = new HashMap<>();
+        for (BookInfo book : allBooks) {
+            if (book.getCategoryId() == null) continue;
+            Long rootId = childToRoot.get(book.getCategoryId());
+            if (rootId == null) rootId = book.getCategoryId();
+            rootCount.merge(rootId, 1L, Long::sum);
+        }
+
+        List<Map<String, Object>> catDist = new ArrayList<>();
+        for (Map.Entry<Long, Long> entry : rootCount.entrySet()) {
+            Category rootCat = allCategories.stream()
+                    .filter(c -> c.getId().equals(entry.getKey())).findFirst().orElse(null);
+            if (rootCat == null) continue;
+            long count = entry.getValue();
+            Map<String, Object> item = new HashMap<>();
+            item.put("name", rootCat.getName());
+            item.put("count", count);
+            item.put("percentage", totalBooks > 0 ? Math.round(count * 100.0 / totalBooks * 10) / 10.0 : 0);
+            catDist.add(item);
         }
 
         List<Map<String, Object>> monthlyNew = new ArrayList<>();

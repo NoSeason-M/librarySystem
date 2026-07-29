@@ -545,8 +545,9 @@ INSERT INTO sys_config (config_key, config_value, config_type, remark) VALUES
     ('borrow.max_books',       '5',                       0, '最大借阅数(默认值,可通过读者类型覆盖)'),
     ('borrow.days',            '30',                      0, '默认借阅天数'),
     ('borrow.renew_count',     '1',                       0, '默认续借次数'),
-    ('borrow.renew_days',      '15',                      0, '默认续借天数'),
-    ('fine.overdue_rate',      '0.50',                    0, '逾期费率(元/天)'),
+    ('borrow.renew_days',           '15',                      0, '默认续借天数'),
+    ('borrow.renew_advance_days',   '7',                       0, '续借提前天数(距应还≤N天可续借)'),
+    ('fine.overdue_rate',           '0.50',                    0, '逾期费率(元/天)'),
     ('fine.damage_multiple',   '2.00',                    0, '损坏赔偿倍数(定价×倍数)'),
     ('fine.lost_multiple',     '3.00',                    0, '丢失赔偿倍数(定价×倍数)'),
     ('reservation.keep_hours', '48',                      0, '预约保留时长(小时)'),
@@ -555,7 +556,10 @@ INSERT INTO sys_config (config_key, config_value, config_type, remark) VALUES
     ('security.captcha',       '1',                       0, '启用验证码(0关闭/1开启)'),
     ('security.failed_limit',  '5',                       0, '登录失败锁定次数'),
     ('notify.overdue_advance_days', '3',                  0, '逾期提前提醒天数'),
-    ('notify.daily_overdue_check', '1',                   0, '每日逾期检查(0关闭/1开启)');
+    ('notify.daily_overdue_check', '1',                   0, '每日逾期检查(0关闭/1开启)'),
+    ('scheduled.reservation.auto-cancel', '1',            0, '预约超时自动取消(0关闭/1开启)'),
+    ('scheduled.fine.auto-generate', '1',                 0, '逾期自动生成罚款(0关闭/1开启)'),
+    ('scheduled.notify.overdue-check', '1',               0, '每日逾期提醒检查(0关闭/1开启)');
 
 -- 7.2 角色数据 (4个预设角色)
 INSERT INTO sys_role (name, code, description, sort) VALUES
@@ -581,7 +585,7 @@ INSERT INTO sys_menu (id, name, type, path, component, parent_id, sort) VALUES
     (10,  '借书',          1, '/admin/borrow/borrow',    '/admin/borrow/Borrow',   2, 1),
     (11,  '还书',          1, '/admin/borrow/return',    '/admin/borrow/Return',   2, 2),
     (12,  '预约管理',      1, '/admin/borrow/reserve',  '/admin/borrow/Reservation', 2, 3),
-    (13,  '罚款管理',      1, '/admin/borrow/fine',     '/admin/borrow/Fine',     2, 4);
+    (13,  '罚款管理',      1, '/admin/fines',           '/admin/fines/index',     2, 4);
 
 -- 图书管理子菜单
 INSERT INTO sys_menu (id, name, type, path, component, parent_id, sort) VALUES

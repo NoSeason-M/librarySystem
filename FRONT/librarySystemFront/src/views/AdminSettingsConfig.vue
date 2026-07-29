@@ -34,9 +34,10 @@ async function saveEdit(id: number) {
 }
 
 const configGroups = [
-  { name: '借阅规则', keys: ['borrow.max_books', 'borrow.days', 'borrow.renew_count', 'borrow.renew_days'] },
+  { name: '借阅规则', keys: ['borrow.max_books', 'borrow.days', 'borrow.renew_count', 'borrow.renew_days', 'borrow.renew_advance_days'] },
   { name: '罚款规则', keys: ['fine.overdue_rate', 'fine.damage_multiple', 'fine.lost_multiple'] },
   { name: '预约设置', keys: ['reservation.keep_hours'] },
+  { name: '定时任务', keys: ['scheduled.reservation.auto-cancel', 'scheduled.fine.auto-generate', 'scheduled.notify.overdue-check'] },
   { name: '读者默认值', keys: ['reader.initial_password', 'reader.card_prefix'] },
   { name: '安全设置', keys: ['security.captcha', 'security.failed_limit'] },
   { name: '系统信息', keys: ['system.name', 'system.icp', 'system.contact_email'] },
@@ -47,10 +48,14 @@ const configLabels: Record<string, string> = {
   'borrow.days': '默认借阅天数',
   'borrow.renew_count': '续借次数上限',
   'borrow.renew_days': '续借天数',
+  'borrow.renew_advance_days': '续借提前天数（距应还≤N天可续借）',
   'fine.overdue_rate': '逾期费率（元/天）',
   'fine.damage_multiple': '损坏赔偿倍数',
   'fine.lost_multiple': '丢失赔偿倍数',
   'reservation.keep_hours': '预约保留时长（小时）',
+  'scheduled.reservation.auto-cancel': '预约超时自动取消（1=是/0=否）',
+  'scheduled.fine.auto-generate': '逾期自动生成罚款（1=是/0=否）',
+  'scheduled.notify.overdue-check': '每日逾期提醒检查（1=是/0=否）',
   'reader.initial_password': '读者初始密码',
   'reader.card_prefix': '读者证号前缀',
   'security.captcha': '启用验证码（1=是/0=否）',

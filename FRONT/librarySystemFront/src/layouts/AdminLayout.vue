@@ -13,7 +13,7 @@ const adminNav = [
   { icon: '📚', label: '图书管理', route: '/admin/books' },
   { icon: '👥', label: '读者管理', route: '/admin/readers' },
   { icon: '📈', label: '统计分析', route: '/admin/statistics' },
-  { icon: '💰', label: '罚款管理' },
+  { icon: '💰', label: '罚款管理', route: '/admin/fines' },
   { icon: '⚙️', label: '系统设置', route: '/admin/settings' },
 ]
 
@@ -22,7 +22,12 @@ function navigateTo(item: { label: string; route?: string }) {
 }
 
 function isActive(item: { label: string; route?: string }): boolean {
-  return item.route ? route.path.startsWith(item.route) : false
+  if (!item.route) return false
+  // 工作台精确匹配 /admin，其他项匹配前缀
+  if (item.route === '/admin') {
+    return route.path === '/admin'
+  }
+  return route.path.startsWith(item.route)
 }
 </script>
 
