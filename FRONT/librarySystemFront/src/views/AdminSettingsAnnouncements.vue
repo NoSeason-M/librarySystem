@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { listAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement } from '../api/system'
+import { listAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement, publishAnnouncement } from '../api/system'
 
 const router = useRouter()
 
@@ -35,7 +35,7 @@ async function submitForm() {
   catch (err: any) { formError.value = err.message } finally { saving.value = false }
 }
 async function handleDelete(id: number) { if (!confirm('确认删除此公告？')) return; try { await deleteAnnouncement(id); loadList() } catch { alert('删除失败') } }
-async function publishItem(a: any) { try { await updateAnnouncement(a.id, { status: 1 }); loadList() } catch { alert('发布失败') } }
+async function publishItem(a: any) { try { await publishAnnouncement(a.id); loadList() } catch { alert('发布失败') } }
 
 function getStatusLabel(s: number) { return s === 1 ? '已发布' : s === 0 ? '草稿' : '已归档' }
 function getStatusColor(s: number) { return s === 1 ? 'var(--success,#34D399)' : s === 0 ? 'var(--text-muted,#888)' : 'var(--danger,#F87171)' }

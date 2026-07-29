@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getHotBooks, getNewArrivals, getCategoryTree } from '../api/books'
 import type { BookItem } from '../api/books'
+import NotifBell from '../components/NotifBell.vue'
 
 const router = useRouter()
 
@@ -150,6 +151,7 @@ function goToSearchByFilter(filter: string) {
         <span class="nav__link" @click="goToDashboard">我的</span>
       </div>
       <div class="nav__user">
+        <NotifBell />
         <span class="nav__username">{{ realName }}</span>
         <div class="nav__avatar" @click="goToDashboard">{{ userInitials }}</div>
       </div>

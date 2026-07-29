@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getCurrentReservations } from '../api/borrow'
+import { getCurrentReservations, cancelReservation } from '../api/borrow'
 
 const loading = ref(true)
 const activeTab = ref('进行中')
@@ -13,26 +13,41 @@ onMounted(async () => {
   try {
     reservations.value = await getCurrentReservations(readerNo)
   } catch {
-    reservations.value = getDemoReservations()
+    reservations.value = []
   } finally {
     loading.value = false
   }
 })
 
-function getDemoReservations() {
-  return [
-    { bookTitle: '深入理解Java虚拟机', author: '周志明', reserveDate: '2026-07-20', status: '等待中', queuePosition: 1 },
-    { bookTitle: '算法导论', author: 'Thomas H.Cormen', reserveDate: '2026-07-25', status: '等待中', queuePosition: 2 },
-  ]
+const filteredReservations = computed(() => {
+  return reservations.value.filter(r => {
+    const raw = r.status
+    if (activeTab.value === '进行中') return raw === 'waiting'
+    if (activeTab.value === '待取书') return raw === 'ready'
+    return ['fulfilled', 'cancelled', 'expired'].includes(raw)
+  })
+})
+
+import { computed } from 'vue'
+
+async function handleCancel(id: number) {
+  if (!confirm('确认取消此预约？')) return
+  try {
+    await cancelReservation(id)
+    const idx = reservations.value.findIndex(r => r.id === id)
+    if (idx >= 0) reservations.value[idx].status = 'cancelled'
+  } catch (err: any) {
+    alert(err.message || '取消失败')
+  }
 }
 
 function statusColor(status: string): { bg: string; text: string } {
   switch (status) {
-    case '等待中': return { bg: 'var(--accent-light,#E8F4FD)', text: 'var(--accent,#4A9FD8)' }
-    case '待取书': return { bg: 'rgba(52,211,153,0.12)', text: 'var(--success,#34D399)' }
-    case '已完成': return { bg: 'var(--bg-secondary,#F7F8FA)', text: 'var(--text-muted,#888)' }
-    case '已取消': return { bg: 'rgba(248,113,113,0.12)', text: 'var(--danger,#F87171)' }
-    case '已过期': return { bg: 'var(--bg-secondary,#F7F8FA)', text: 'var(--text-muted,#888)' }
+    case 'waiting': return { bg: 'var(--accent-light,#E8F4FD)', text: 'var(--accent,#4A9FD8)' }
+    case 'ready': return { bg: 'rgba(52,211,153,0.12)', text: 'var(--success,#34D399)' }
+    case 'fulfilled': return { bg: 'var(--bg-secondary,#F7F8FA)', text: 'var(--text-muted,#888)' }
+    case 'cancelled': return { bg: 'rgba(248,113,113,0.12)', text: 'var(--danger,#F87171)' }
+    case 'expired': return { bg: 'var(--bg-secondary,#F7F8FA)', text: 'var(--text-muted,#888)' }
     default: return { bg: 'var(--bg-secondary,#F7F8FA)', text: 'var(--text-muted,#888)' }
   }
 }
@@ -48,7 +63,6 @@ function statusColor(status: string): { bg: string; text: string } {
     <div v-if="loading" class="loading-msg">加载中...</div>
 
     <template v-if="!loading">
-      <!-- Tabs -->
       <div class="tabs-bar">
         <div v-for="tab in tabs" :key="tab"
           :class="['tab', { 'tab--active': activeTab === tab }]"
@@ -57,19 +71,21 @@ function statusColor(status: string): { bg: string; text: string } {
         </div>
       </div>
 
-      <!-- Reservation Cards -->
-      <div v-if="reservations.length === 0" class="empty-state">暂无预约记录</div>
-      <div v-for="item in reservations" :key="item.bookTitle" class="reserve-card">
+      <div v-if="filteredReservations.length === 0" class="empty-state">暂无预约记录</div>
+      <div v-for="item in filteredReservations" :key="item.id" class="reserve-card">
         <div class="reserve-info">
           <h3 class="reserve-title">{{ item.bookTitle }}</h3>
-          <p class="reserve-author">{{ item.author }}</p>
-          <p class="reserve-date">预约时间：{{ item.reserveDate }}</p>
+          <p class="reserve-author" v-if="item.bookAuthor">{{ item.bookAuthor }}</p>
+          <p class="reserve-date">预约时间：{{ item.reserveDate?.slice(0, 10) }}</p>
+          <p class="reserve-queue" v-if="item.queuePosition > 0">排队位置：第 {{ item.queuePosition }} 位</p>
+          <p class="reserve-expire" v-if="item.expireDate && (item.status === 'ready' || item.status === 'waiting')">到期时间：{{ item.expireDate?.slice(0, 10) }}</p>
+          <p class="reserve-location" v-if="item.pickLocationName">取书地点：{{ item.pickLocationName }}</p>
         </div>
         <div class="reserve-actions">
           <span class="reserve-badge" :style="{ background: statusColor(item.status).bg, color: statusColor(item.status).text }">
-            {{ item.status }}
+            {{ item.statusLabel || item.status }}
           </span>
-          <span class="reserve-cancel">取消预约</span>
+          <span v-if="item.status === 'waiting'" class="reserve-cancel" @click="handleCancel(item.id)">取消预约</span>
         </div>
       </div>
     </template>
@@ -92,7 +108,7 @@ function statusColor(status: string): { bg: string; text: string } {
 .reserve-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .reserve-title { font-family: var(--font-sans,Inter); font-size: 16px; font-weight: 600; color: var(--text-primary,#1A1A1A); margin: 0; }
 .reserve-author { font-family: var(--font-sans,Inter); font-size: 13px; color: var(--text-secondary,#666); margin: 0; }
-.reserve-date { font-family: var(--font-sans,Inter); font-size: 12px; color: var(--text-muted,#888); margin: 0; }
+.reserve-date, .reserve-queue, .reserve-expire, .reserve-location { font-family: var(--font-sans,Inter); font-size: 12px; color: var(--text-muted,#888); margin: 0; }
 .reserve-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .reserve-badge { padding: 6px 14px; border-radius: 999px; font-family: var(--font-sans,Inter); font-size: 12px; font-weight: 500; }
 .reserve-cancel { font-family: var(--font-sans,Inter); font-size: 13px; font-weight: 500; color: var(--danger,#F87171); cursor: pointer; }

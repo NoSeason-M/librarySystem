@@ -191,6 +191,12 @@ public class SystemController {
         return Result.success();
     }
 
+    @PutMapping("/announcements/{id}/publish")
+    public Result<Void> publishAnnouncement(@PathVariable Long id) {
+        systemService.publishAnnouncement(id);
+        return Result.success();
+    }
+
     // ==================== Backup ====================
 
     @SuppressWarnings("unchecked")

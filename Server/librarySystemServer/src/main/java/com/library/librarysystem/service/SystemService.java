@@ -30,6 +30,8 @@ public class SystemService {
     private final SysOperationLogMapper operationLogMapper;
     private final AnnouncementMapper announcementMapper;
     private final SysBackupMapper backupMapper;
+    private final ReaderMapper readerMapper;
+    private final NotificationMapper notificationMapper;
     private final PasswordEncoder passwordEncoder;
 
     // ==================== Users ====================
@@ -433,6 +435,28 @@ public class SystemService {
     }
 
     public void deleteAnnouncement(Long id) { announcementMapper.deleteById(id); }
+
+    @Transactional
+    public void publishAnnouncement(Long id) {
+        Announcement a = announcementMapper.selectById(id);
+        if (a == null) throw new BusinessException("Announcement not found");
+        a.setStatus(1);
+        a.setPublishTime(LocalDateTime.now());
+        announcementMapper.updateById(a);
+
+        // Send notification to all readers
+        List<Reader> allReaders = readerMapper.selectList(null);
+        for (Reader reader : allReaders) {
+            Notification n = new Notification();
+            n.setReaderId(reader.getId());
+            n.setTitle("系统公告");
+            n.setContent(a.getTitle() + "：" + (a.getContent().length() > 80 ? a.getContent().substring(0, 80) + "…" : a.getContent()));
+            n.setType("system");
+            n.setRelatedId(id);
+            n.setReadFlag(0);
+            notificationMapper.insert(n);
+        }
+    }
 
     // ==================== Backup ====================
 

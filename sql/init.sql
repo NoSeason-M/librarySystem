@@ -550,7 +550,7 @@ INSERT INTO sys_config (config_key, config_value, config_type, remark) VALUES
     ('fine.overdue_rate',           '0.50',                    0, '逾期费率(元/天)'),
     ('fine.damage_multiple',   '2.00',                    0, '损坏赔偿倍数(定价×倍数)'),
     ('fine.lost_multiple',     '3.00',                    0, '丢失赔偿倍数(定价×倍数)'),
-    ('reservation.keep_hours', '48',                      0, '预约保留时长(小时)'),
+    ('reservation.keep_hours', '24',                      0, '预约保留时长(小时)'),
     ('reader.initial_password','123456',                  0, '读者初始密码'),
     ('reader.card_prefix',     'RD',                      0, '读者证号前缀'),
     ('security.captcha',       '1',                       0, '启用验证码(0关闭/1开启)'),

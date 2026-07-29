@@ -1,39 +1,55 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { getFavorites } from '../api/favorites'
+import { getFavorites, removeFavorite } from '../api/favorites'
+import { getMyProfile } from '../api/readers'
 
 const router = useRouter()
 const loading = ref(true)
 const favorites = ref<any[]>([])
+const errorMsg = ref('')
+
+const rows = computed(() => {
+  const result: any[][] = []
+  for (let i = 0; i < favorites.value.length; i += 2) {
+    result.push(favorites.value.slice(i, i + 2))
+  }
+  return result
+})
 
 onMounted(async () => {
-  const readerNo = localStorage.getItem('readerNo') || 'RD20260001'
+  let readerNo = localStorage.getItem('readerNo') || ''
+  if (!readerNo) {
+    try {
+      const profile = await getMyProfile()
+      readerNo = profile.readerNo || 'RD20260001'
+      localStorage.setItem('readerNo', readerNo)
+    } catch {
+      readerNo = 'RD20260001'
+    }
+  }
   try {
     const result = await getFavorites(readerNo)
     favorites.value = result.records || []
-  } catch {
-    favorites.value = getDemoFavorites()
+  } catch (e: any) {
+    errorMsg.value = e.message || '加载失败'
   } finally {
     loading.value = false
   }
 })
 
-function getDemoFavorites() {
-  return [
-    { id: 1, bookInfoId: 1, title: '三体', author: '刘慈欣' },
-    { id: 2, bookInfoId: 2, title: '百年孤独', author: '加西亚·马尔克斯' },
-    { id: 3, bookInfoId: 6, title: '围城', author: '钱钟书' },
-    { id: 4, bookInfoId: 5, title: '人类简史', author: '尤瓦尔·赫拉利' },
-  ]
-}
-
 function goToDetail(bookInfoId: number) {
   if (bookInfoId) router.push(`/books/${bookInfoId}`)
 }
 
-function removeFav(index: number) {
-  favorites.value.splice(index, 1)
+async function removeFav(rowIdx: number, colIdx: number, item: any) {
+  const readerNo = localStorage.getItem('readerNo') || 'RD20260001'
+  try {
+    await removeFavorite(item.bookInfoId, readerNo)
+    favorites.value.splice(rowIdx * 2 + colIdx, 1)
+  } catch {
+    alert('取消收藏失败')
+  }
 }
 </script>
 
@@ -45,12 +61,13 @@ function removeFav(index: number) {
     </div>
 
     <div v-if="loading" class="loading-msg">加载中...</div>
+    <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
 
-    <template v-if="!loading">
+    <template v-if="!loading && !errorMsg">
       <div v-if="favorites.length === 0" class="empty-state">暂无收藏</div>
 
-      <div v-for="ri in Math.ceil(favorites.length / 2)" :key="ri" class="grid-row">
-        <div v-for="(item, ci) in favorites.slice(ri * 2, ri * 2 + 2)" :key="item.id"
+      <div v-for="(row, ri) in rows" :key="ri" class="grid-row">
+        <div v-for="(item, ci) in row" :key="item.id"
           class="fav-card" @click="goToDetail(item.bookInfoId)">
           <div class="fav-cover">📖</div>
           <div class="fav-info">
@@ -58,11 +75,11 @@ function removeFav(index: number) {
             <p class="fav-author">{{ item.author }}</p>
           </div>
           <div class="fav-actions">
-            <span class="fav-remove" @click.stop="removeFav(ri * 2 + ci)">取消收藏</span>
+            <span class="fav-remove" @click.stop="removeFav(ri, ci, item)">取消收藏</span>
           </div>
         </div>
-        <!-- Fill empty slot -->
-        <div v-if="favorites.length % 2 !== 0 && ri === Math.ceil(favorites.length / 2) - 1" class="fav-card fav-card--empty"></div>
+        <!-- Empty filler for single item row -->
+        <div v-if="row.length === 1" class="fav-card fav-card--empty"></div>
       </div>
     </template>
   </div>
@@ -74,6 +91,7 @@ function removeFav(index: number) {
 .page-count { font-family: var(--font-sans,Inter); font-size: 13px; color: var(--text-muted,#888); }
 .loading-msg { padding: 40px; text-align: center; color: var(--text-muted,#888); font-size: 14px; }
 .empty-state { padding: 40px; text-align: center; color: var(--text-muted,#888); font-size: 13px; background: var(--bg-primary,#FFF); border-radius: var(--card-radius,16px); border: 1px solid var(--border,#E5E7EB); }
+.error-msg { padding: 12px; border-radius: 10px; background: rgba(248,113,113,0.1); color: var(--danger,#F87171); font-size: 13px; }
 
 .grid-row { display: flex; gap: 16px; }
 .fav-card { flex: 1; display: flex; flex-direction: column; gap: 10px; background: var(--bg-primary,#FFF); border-radius: var(--card-radius,16px); border: 1px solid var(--border,#E5E7EB); overflow: hidden; cursor: pointer; transition: box-shadow 0.15s, transform 0.15s; }

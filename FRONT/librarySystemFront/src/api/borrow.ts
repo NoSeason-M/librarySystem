@@ -40,6 +40,22 @@ export async function getCurrentReservations(readerNo: string): Promise<any[]> {
   return http.get('/reservations/current', { params: { readerNo } }) as any
 }
 
+export async function createReservation(bookInfoId: number, readerNo: string, pickLocationId?: number): Promise<any> {
+  return http.post('/reservations', { bookInfoId, readerNo, pickLocationId }) as any
+}
+
+export async function cancelReservation(id: number): Promise<void> {
+  return http.delete(`/reservations/${id}`) as any
+}
+
+export async function pickupReservation(id: number, operatorId: number): Promise<any> {
+  return http.post(`/reservations/${id}/pickup`, { operatorId }) as any
+}
+
+export async function listAdminReservations(status?: string): Promise<any[]> {
+  return http.get('/reservations/admin/list', { params: { status } }) as any
+}
+
 // ==================== Renew ====================
 
 export async function renewBook(recordId: number, readerNo: string): Promise<{ oldDueDate: string; newDueDate: string; renewCount: number }> {

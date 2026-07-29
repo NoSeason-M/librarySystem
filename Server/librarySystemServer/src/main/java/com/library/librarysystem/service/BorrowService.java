@@ -27,6 +27,7 @@ public class BorrowService {
     private final FineRecordMapper fineRecordMapper;
     private final SysUserMapper userMapper;
     private final ReservationMapper reservationMapper;
+    private final NotificationMapper notificationMapper;
     private final SysConfigMapper configMapper;
 
     // ==================== Reader-facing ====================
@@ -438,6 +439,42 @@ public class BorrowService {
                 if (book != null) {
                     book.setAvailableCopies(book.getAvailableCopies() != null ? book.getAvailableCopies() + 1 : 0);
                     bookInfoMapper.updateById(book);
+                }
+
+                // Check for waiting reservations and notify the first reader
+                if (book != null) {
+                    List<Reservation> waitingReservations = reservationMapper.selectList(
+                            new LambdaQueryWrapper<Reservation>()
+                                    .eq(Reservation::getBookInfoId, book.getId())
+                                    .eq(Reservation::getStatus, "waiting")
+                                    .orderByAsc(Reservation::getCreateTime)
+                                    .last("LIMIT 1"));
+                    if (!waitingReservations.isEmpty()) {
+                        Reservation nextRes = waitingReservations.get(0);
+                        // Mark as ready and assign this copy
+                        nextRes.setStatus("ready");
+                        nextRes.setBookCopyId(copy.getId());
+                        nextRes.setExpireDate(LocalDateTime.now().plusHours(48));
+                        reservationMapper.updateById(nextRes);
+
+                        // Set copy as reserved
+                        copy.setStatus("reserved");
+                        bookCopyMapper.updateById(copy);
+
+                        // Decrement available copies (already incremented above)
+                        book.setAvailableCopies(Math.max(0, (book.getAvailableCopies() != null ? book.getAvailableCopies() : 1) - 1));
+                        bookInfoMapper.updateById(book);
+
+                        // Notify reader
+                        Notification n = new Notification();
+                        n.setReaderId(nextRes.getReaderId());
+                        n.setTitle("预约到书");
+                        n.setContent("您预约的《" + book.getTitle() + "》已可到馆领取，请在 48 小时内办理借阅。");
+                        n.setType("arrival");
+                        n.setRelatedId(nextRes.getId());
+                        n.setReadFlag(0);
+                        notificationMapper.insert(n);
+                    }
                 }
 
                 item.put("title", book != null ? book.getTitle() : "");

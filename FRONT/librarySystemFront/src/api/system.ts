@@ -39,6 +39,7 @@ export async function listAnnouncements(page = 1, size = 10) {
 export async function createAnnouncement(data: any) { return http.post('/system/announcements', data) as any }
 export async function updateAnnouncement(id: number, data: any) { return http.put(`/system/announcements/${id}`, data) as any }
 export async function deleteAnnouncement(id: number) { return http.delete(`/system/announcements/${id}`) as any }
+export async function publishAnnouncement(id: number) { return http.put(`/system/announcements/${id}/publish`) as any }
 
 export async function listBackups() { return http.get('/system/backup') as any }
 export async function createBackup() { return http.post('/system/backup') as any }

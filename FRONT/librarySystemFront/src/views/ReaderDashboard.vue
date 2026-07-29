@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCurrentBorrowing, getBorrowSummary } from '../api/borrow'
+import NotifBell from '../components/NotifBell.vue'
 
 const router = useRouter()
 
@@ -74,6 +75,7 @@ function goToBookDetail(bookInfoId: number) {
       <span v-for="link in navLinks" :key="link" class="nav__link" @click="navigateTo(link)">{{ link }}</span>
       </div>
       <div class="nav__user">
+        <NotifBell />
         <span class="nav__username">{{ readerInfo.name }}</span>
         <div class="nav__avatar">{{ readerInfo.initials }}</div>
       </div>

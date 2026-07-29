@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { searchBooks, getCategoryTree, getHotBooks } from '../api/books'
 import http from '../api/index'
 import type { BookItem } from '../api/books'
+import NotifBell from '../components/NotifBell.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -235,6 +236,7 @@ function goPage(page: number | string) {
         <span class="nav__link" @click="goToDashboard">我的</span>
       </div>
       <div class="nav__user">
+        <NotifBell />
         <span class="nav__username">{{ realName }}</span>
         <div class="nav__avatar" @click="goToDashboard">{{ userInitials }}</div>
       </div>

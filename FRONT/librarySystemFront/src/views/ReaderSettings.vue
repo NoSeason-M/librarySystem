@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getMyProfile, updateMyProfile } from '../api/readers'
 import { changePassword } from '../api/auth'
+import NotifBell from '../components/NotifBell.vue'
 
 const router = useRouter()
 
@@ -125,6 +126,7 @@ function goHome() {
         <span class="nav__link nav__link--active">个人中心</span>
       </div>
       <div class="nav__user">
+        <NotifBell />
         <span class="nav__username">{{ realName }}</span>
         <div class="nav__avatar" @click="goToDashboard">{{ userInitials }}</div>
       </div>

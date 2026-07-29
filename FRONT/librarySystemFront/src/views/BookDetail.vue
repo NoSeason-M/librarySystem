@@ -3,6 +3,22 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getBookDetail, getBookCopies } from '../api/books'
 import type { BookItem, BookCopyItem } from '../api/books'
+import { createReservation } from '../api/borrow'
+import { checkFavorite, addFavorite, removeFavorite } from '../api/favorites'
+import NotifBell from '../components/NotifBell.vue'
+
+const isFavorited = ref(false)
+
+let cachedReaderNo = localStorage.getItem('readerNo') || ''
+async function getReaderNo(): Promise<string> {
+  if (cachedReaderNo) return cachedReaderNo
+  try {
+    const profile = await (await import('../api/readers')).getMyProfile()
+    cachedReaderNo = profile.readerNo || 'RD20260001'
+    localStorage.setItem('readerNo', cachedReaderNo)
+  } catch { cachedReaderNo = 'RD20260001' }
+  return cachedReaderNo
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -25,12 +41,15 @@ onMounted(async () => {
   if (!id) { error.value = 'Invalid book ID'; loading.value = false; return }
 
   try {
-    const [bookData, copyData] = await Promise.all([
+    const rn = await getReaderNo()
+    const [bookData, copyData, fav] = await Promise.all([
       getBookDetail(id),
       getBookCopies(id).catch(() => []),
+      checkFavorite(id, rn).catch(() => ({ favorited: false })),
     ])
     book.value = bookData
     copies.value = copyData
+    isFavorited.value = fav.favorited
   } catch {
     error.value = 'Failed to load book details'
     book.value = getDemoBook(id)
@@ -74,6 +93,41 @@ function renderStars(rating: number | null): string {
   return '★'.repeat(full) + half
 }
 
+async function handleReserveOrBorrow() {
+  if (!book.value?.totalCopies || book.value.totalCopies <= 0) {
+    alert('暂无馆藏副本，无法预约')
+    return
+  }
+  const readerNo = await getReaderNo()
+  try {
+    const result = await createReservation(book.value!.id, readerNo)
+    if (result.status === 'ready') {
+      alert('预约成功！已为你预留副本，请在 24 小时内到馆办理借阅。')
+    } else if (result.queuePosition > 0) {
+      alert(`预约成功！当前排队第 ${result.queuePosition} 位，有可借副本后将通知你。`)
+    } else {
+      alert('预约成功！')
+    }
+  } catch (err: any) {
+    alert(err.message || '预约失败')
+  }
+}
+
+async function toggleFavorite() {
+  const readerNo = await getReaderNo()
+  try {
+    if (isFavorited.value) {
+      await removeFavorite(book.value!.id, readerNo)
+      isFavorited.value = false
+    } else {
+      await addFavorite(book.value!.id, readerNo)
+      isFavorited.value = true
+    }
+  } catch (err: any) {
+    alert(err.message || '操作失败')
+  }
+}
+
 function statusBadgeColor(status: string): string {
   switch (status) {
     case 'in': return 'var(--success, #34D399)'
@@ -93,6 +147,7 @@ function statusBadgeColor(status: string): string {
       <span class="nav__logo" @click="router.push('/home')">📚 LibraryOS</span>
       <div style="flex:1"></div>
       <div class="nav__user">
+        <NotifBell />
         <span class="nav__username">{{ realName }}</span>
         <div class="nav__avatar">{{ userInitials }}</div>
       </div>
@@ -156,8 +211,8 @@ function statusBadgeColor(status: string): string {
 
             <!-- Actions -->
             <div class="action-row">
-              <button class="btn-borrow">借阅此书</button>
-              <button class="btn-fav">♡</button>
+              <button class="btn-borrow" @click="handleReserveOrBorrow">预约此书</button>
+              <button class="btn-fav" @click="toggleFavorite">{{ isFavorited ? '❤️' : '♡' }}</button>
             </div>
           </div>
         </div>
