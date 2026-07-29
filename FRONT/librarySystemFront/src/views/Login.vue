@@ -3,6 +3,8 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { loginApi, getCaptchaApi } from '../api/auth'
 
+import AppLogo from '../components/AppLogo.vue'
+
 const router = useRouter()
 
 // ---------- Form State ----------
@@ -18,6 +20,44 @@ const errorMsg = ref('')
 const rememberMe = ref(false)
 const loginFailedCount = ref(0)
 const showCaptcha = ref(false)
+
+// Forgot password
+const showForgotModal = ref(false)
+const forgotEmail = ref('')
+const forgotLoading = ref(false)
+const forgotMsg = ref('')
+const forgotError = ref('')
+const newPassword = ref('')
+
+async function handleForgotPassword() {
+  if (!forgotEmail.value.trim()) { forgotError.value = '请输入邮箱地址'; return }
+  forgotLoading.value = true
+  forgotError.value = ''
+  forgotMsg.value = ''
+  newPassword.value = ''
+  try {
+    const http = await import('../api/index')
+    const result: any = await http.default.post('/auth/forgot-password', { email: forgotEmail.value.trim() })
+    forgotMsg.value = result.message || '密码已重置'
+    newPassword.value = result.newPassword || ''
+  } catch (err: any) {
+    forgotError.value = err.message || '重置失败'
+  } finally {
+    forgotLoading.value = false
+  }
+}
+
+function openForgotModal() {
+  showForgotModal.value = true
+  forgotEmail.value = ''
+  forgotMsg.value = ''
+  forgotError.value = ''
+  newPassword.value = ''
+}
+
+function closeForgotModal() {
+  showForgotModal.value = false
+}
 
 // ---------- Captcha ----------
 const captchaImage = ref('')
@@ -106,7 +146,7 @@ onMounted(() => {
     <!-- Left Panel -->
     <div class="left-panel">
       <div class="panel-top">
-        <div class="logo">📚 LibraryOS</div>
+        <div class="logo"><AppLogo :size="28" /> LibraryOS</div>
         <div class="tagline">Next-generation library management system</div>
       </div>
 
@@ -189,7 +229,7 @@ onMounted(() => {
             </div>
             <span class="remember-label">Remember me</span>
           </label>
-          <a class="forgot-password" href="#">Forgot password?</a>
+          <a class="forgot-password" href="#" @click.prevent="openForgotModal">Forgot password?</a>
         </div>
 
         <!-- Login Button -->
@@ -205,12 +245,37 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Demo Accounts Hint -->
-      <div class="demo-hint">
-        <span class="hint-label">Demo accounts:</span>
-        <span class="demo-badge">Admin: admin / admin123</span>
-        <span class="demo-badge">Librarian: librarian / admin123</span>
-        <span class="demo-badge">Reader: reader01 / admin123</span>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div v-if="showForgotModal" class="modal-overlay" @click.self="closeForgotModal">
+      <div class="modal">
+        <div class="modal__header">
+          <h2 class="modal__title">Forgot Password</h2>
+          <button class="modal__close" @click="closeForgotModal">✕</button>
+        </div>
+        <div class="modal__body">
+          <p class="modal__desc">Enter your registered email address and we'll reset your password.</p>
+          <div class="field">
+            <label class="field-label">Email</label>
+            <div class="input-box">
+              <input v-model="forgotEmail" type="email" placeholder="you@example.com" @keyup.enter="handleForgotPassword" />
+            </div>
+          </div>
+          <div v-if="forgotError" class="msg msg--error">{{ forgotError }}</div>
+          <div v-if="forgotMsg" class="msg msg--success">
+            <p>{{ forgotMsg }}</p>
+            <p v-if="newPassword" class="new-pwd">New Password: <strong>{{ newPassword }}</strong></p>
+            <p class="pwd-hint">Please change your password after logging in.</p>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn-cancel" @click="closeForgotModal">Cancel</button>
+          <button class="btn-primary" :disabled="forgotLoading" @click="handleForgotPassword">
+            <span v-if="forgotLoading" class="spinner"></span>
+            <span v-else>Reset Password</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -221,7 +286,7 @@ onMounted(() => {
   width: 100%;
   min-height: 100vh;
   display: flex;
-  background: var(--bg-secondary);
+  background: linear-gradient(to right, #0A0A0A 0%, #3A3A3A 35%, #D8D8D8 65%, #F7F8FA 100%);
   padding: 24px;
   box-sizing: border-box;
 }
@@ -230,7 +295,7 @@ onMounted(() => {
 .left-panel {
   width: 560px;
   height: calc(100vh - 48px);
-  background: var(--bg-inverse);
+  background: rgba(10, 10, 10, 0.55);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -256,6 +321,29 @@ onMounted(() => {
   font-size: 15px;
   color: var(--text-muted);
 }
+
+/* ===== Forgot Password Modal ===== */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
+.modal { width: 100%; max-width: 420px; background: var(--bg-primary,#FFF); border-radius: var(--card-radius,16px); display: flex; flex-direction: column; }
+.modal__header { display: flex; justify-content: space-between; align-items: center; padding: 24px 28px 0; }
+.modal__title { font-family: var(--font-sans,Inter); font-size: 20px; font-weight: 600; color: var(--text-primary,#1A1A1A); margin: 0; }
+.modal__close { width: 32px; height: 32px; border-radius: 8px; background: var(--bg-secondary,#F7F8FA); border: none; font-size: 14px; color: var(--text-muted,#888); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.modal__close:hover { background: var(--border,#E5E7EB); }
+.modal__body { padding: 20px 28px; display: flex; flex-direction: column; gap: 14px; }
+.modal__footer { display: flex; gap: 12px; justify-content: flex-end; padding: 16px 28px 24px; }
+.modal__desc { font-family: var(--font-sans,Inter); font-size: 13px; color: var(--text-secondary,#666); margin: 0; line-height: 1.5; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-label { font-family: var(--font-sans,Inter); font-size: 13px; font-weight: 500; color: var(--text-primary,#1A1A1A); }
+.input-box { padding: 10px 14px; border-radius: var(--input-radius,12px); background: var(--bg-secondary,#F7F8FA); border: 1.5px solid var(--border,#E5E7EB); }
+.input-box:focus-within { border-color: var(--accent,#4A9FD8); }
+.input-box input { width: 100%; background: transparent; border: none; outline: none; font-family: var(--font-sans,Inter); font-size: 13px; color: var(--text-primary,#1A1A1A); }
+.msg { padding: 10px 14px; border-radius: 8px; font-family: var(--font-sans,Inter); font-size: 13px; line-height: 1.5; }
+.msg--error { background: rgba(248,113,113,0.1); color: var(--danger,#F87171); }
+.msg--success { background: rgba(52,211,153,0.1); color: var(--success,#34D399); }
+.new-pwd { font-family: var(--font-mono,'Geist Mono',monospace); font-size: 14px; margin: 4px 0; }
+.pwd-hint { font-size: 12px; opacity: 0.7; margin: 2px 0 0; }
+.btn-cancel { padding: 10px 24px; border-radius: var(--button-radius,10px); background: var(--bg-primary,#FFF); color: var(--text-secondary,#666); font-family: var(--font-sans,Inter); font-size: 14px; font-weight: 500; border: 1.5px solid var(--border,#E5E7EB); cursor: pointer; }
+.btn-cancel:hover { background: var(--bg-secondary,#F7F8FA); }
 
 .quote-area {
   display: flex;
@@ -303,7 +391,7 @@ onMounted(() => {
   justify-content: center;
   gap: 32px;
   padding: 40px;
-  background: var(--bg-primary);
+  background: rgba(255, 255, 255, 0.85);
   border-radius: 0 16px 16px 0;
 }
 
@@ -533,30 +621,6 @@ onMounted(() => {
 
 .register-link:hover {
   opacity: 0.8;
-}
-
-/* ===== Demo Hint ===== */
-.demo-hint {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.hint-label {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.demo-badge {
-  padding: 5px 10px;
-  border-radius: 999px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-secondary);
 }
 
 /* ===== Responsive ===== */

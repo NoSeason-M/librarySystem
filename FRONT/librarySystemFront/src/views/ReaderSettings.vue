@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { getMyProfile, updateMyProfile } from '../api/readers'
 import { changePassword } from '../api/auth'
 import NotifBell from '../components/NotifBell.vue'
+import AppLogo from '../components/AppLogo.vue'
 
 const router = useRouter()
 
@@ -118,7 +119,7 @@ function goHome() {
   <div class="settings-page">
     <!-- Nav Bar -->
     <nav class="nav">
-      <span class="nav__logo" @click="goHome">📚 LibraryOS</span>
+      <span class="nav__logo" @click="goHome"><AppLogo /> LibraryOS</span>
       <div class="nav__links">
         <span class="nav__link" @click="goHome">首页</span>
         <span class="nav__link" @click="router.push('/books')">浏览</span>

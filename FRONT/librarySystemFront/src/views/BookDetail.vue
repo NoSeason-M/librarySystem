@@ -6,6 +6,7 @@ import type { BookItem, BookCopyItem } from '../api/books'
 import { createReservation } from '../api/borrow'
 import { checkFavorite, addFavorite, removeFavorite } from '../api/favorites'
 import NotifBell from '../components/NotifBell.vue'
+import AppLogo from '../components/AppLogo.vue'
 
 const isFavorited = ref(false)
 
@@ -144,7 +145,7 @@ function statusBadgeColor(status: string): string {
   <div class="book-detail">
     <!-- Nav Bar (1440×66) -->
     <nav class="nav">
-      <span class="nav__logo" @click="router.push('/home')">📚 LibraryOS</span>
+      <span class="nav__logo" @click="router.push('/home')"><AppLogo /> LibraryOS</span>
       <div style="flex:1"></div>
       <div class="nav__user">
         <NotifBell />

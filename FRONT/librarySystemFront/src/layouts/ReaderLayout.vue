@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getMyProfile } from '../api/readers'
+import AppLogo from '../components/AppLogo.vue'
 import { getNotifications, markNotifRead, markAllNotifRead } from '../api/notifications'
 import type { NotifItem } from '../api/notifications'
 
@@ -125,7 +126,7 @@ onUnmounted(() => {
   <div class="reader-layout">
     <!-- Nav Bar -->
     <nav class="nav">
-      <span class="nav__logo" @click="router.push('/home')">📚 LibraryOS</span>
+      <span class="nav__logo" @click="router.push('/home')"><AppLogo /> LibraryOS</span>
       <div class="nav__links">
         <span class="nav__link" @click="router.push('/home')">首页</span>
         <span class="nav__link" @click="router.push('/books')">浏览</span>

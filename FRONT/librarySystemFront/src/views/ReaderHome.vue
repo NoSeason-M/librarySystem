@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { getHotBooks, getNewArrivals, getCategoryTree } from '../api/books'
 import type { BookItem } from '../api/books'
 import NotifBell from '../components/NotifBell.vue'
+import AppLogo from '../components/AppLogo.vue'
 
 const router = useRouter()
 
@@ -143,7 +144,7 @@ function goToSearchByFilter(filter: string) {
   <div class="reader-home">
     <!-- Nav Bar -->
     <nav class="nav">
-      <span class="nav__logo">📚 LibraryOS</span>
+      <span class="nav__logo"><AppLogo /> LibraryOS</span>
       <div class="nav__links">
         <span class="nav__link nav__link--active" @click="goToSearch">首页</span>
         <span class="nav__link" @click="goToSearch">浏览</span>

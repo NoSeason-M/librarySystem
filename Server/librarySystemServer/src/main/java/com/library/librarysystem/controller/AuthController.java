@@ -7,6 +7,9 @@ import com.library.librarysystem.service.AuthService;
 import com.library.librarysystem.service.CaptchaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -66,6 +69,22 @@ public class AuthController {
     @GetMapping("/me")
     public Result<LoginResponse> me(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         return Result.success(authService.getCurrentUser(userDetails));
+    }
+
+    /**
+     * POST /api/auth/forgot-password — reset password via email
+     */
+    @PostMapping("/forgot-password")
+    public Result<Map<String, Object>> forgotPassword(@RequestBody Map<String, String> req) {
+        String email = req.get("email");
+        if (email == null || email.trim().isEmpty()) {
+            return Result.badRequest("Email is required");
+        }
+        String newPassword = authService.resetPasswordByEmail(email.trim());
+        Map<String, Object> result = new HashMap<>();
+        result.put("message", "Password has been reset. Please check the new password below.");
+        result.put("newPassword", newPassword);
+        return Result.success(result);
     }
 
     /**

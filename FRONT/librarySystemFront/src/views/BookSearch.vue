@@ -5,6 +5,7 @@ import { searchBooks, getCategoryTree, getHotBooks } from '../api/books'
 import http from '../api/index'
 import type { BookItem } from '../api/books'
 import NotifBell from '../components/NotifBell.vue'
+import AppLogo from '../components/AppLogo.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -228,7 +229,7 @@ function goPage(page: number | string) {
   <div class="search-page">
     <!-- Nav Bar -->
     <nav class="nav">
-      <span class="nav__logo" @click="goHome">📚 LibraryOS</span>
+      <span class="nav__logo" @click="goHome"><AppLogo /> LibraryOS</span>
       <div class="nav__links">
         <span class="nav__link" @click="goHome">首页</span>
         <span class="nav__link nav__link--active">搜索</span>

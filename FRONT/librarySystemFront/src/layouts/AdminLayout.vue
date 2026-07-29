@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import AppLogo from '../components/AppLogo.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -47,7 +48,7 @@ function isActive(item: NavItem): boolean {
 <template>
   <div class="admin-layout">
     <aside class="sidebar">
-      <div class="sidebar__logo"><span>📚</span><span class="sidebar__logo-text">LibraryOS</span></div>
+      <div class="sidebar__logo"><AppLogo color="#FFF" /><span class="sidebar__logo-text">LibraryOS</span></div>
       <nav class="sidebar__nav">
         <div
           v-for="item in adminNav"

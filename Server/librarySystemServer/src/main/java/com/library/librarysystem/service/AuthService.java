@@ -270,6 +270,32 @@ public class AuthService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Reset password by email — returns the new plain-text password.
+     */
+    @Transactional
+    public String resetPasswordByEmail(String email) {
+        SysUser user = userMapper.selectOne(
+                new LambdaQueryWrapper<SysUser>().eq(SysUser::getEmail, email));
+        if (user == null) {
+            throw new BusinessException("No account found with this email address");
+        }
+
+        // Generate random 8-character password
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+        StringBuilder sb = new StringBuilder();
+        java.util.Random rnd = new java.util.Random();
+        for (int i = 0; i < 8; i++) {
+            sb.append(chars.charAt(rnd.nextInt(chars.length())));
+        }
+        String newPassword = sb.toString();
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userMapper.updateById(user);
+
+        return newPassword;
+    }
+
     private String generateUsername(String firstName, String lastName) {
         // Simple username: firstname.lastname + random digit
         String base = (firstName + "." + lastName).toLowerCase().replaceAll("[^a-z.]", "");

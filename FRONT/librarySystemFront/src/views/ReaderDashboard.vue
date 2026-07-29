@@ -3,6 +3,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCurrentBorrowing, getBorrowSummary } from '../api/borrow'
 import NotifBell from '../components/NotifBell.vue'
+import AppLogo from '../components/AppLogo.vue'
 
 const router = useRouter()
 
@@ -70,7 +71,7 @@ function goToBookDetail(bookInfoId: number) {
   <div class="reader-layout">
     <!-- Nav Bar -->
     <nav class="nav">
-      <span class="nav__logo">📚 LibraryOS</span>
+      <span class="nav__logo"><AppLogo /> LibraryOS</span>
       <div class="nav__links">
       <span v-for="link in navLinks" :key="link" class="nav__link" @click="navigateTo(link)">{{ link }}</span>
       </div>
