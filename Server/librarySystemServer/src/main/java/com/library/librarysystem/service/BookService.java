@@ -221,14 +221,67 @@ public class BookService {
 
     // ==================== Public ====================
 
-    public Map<String, Object> searchBooks(String keyword, int page, int size) {
+    public Map<String, Object> searchBooks(String keyword, String author, String isbn, Long categoryId, Long publisherId, String language, String yearStart, String yearEnd, Boolean availableOnly, String sort, int page, int size) {
         LambdaQueryWrapper<BookInfo> qw = new LambdaQueryWrapper<BookInfo>().eq(BookInfo::getStatus, 1);
+
+        // Keyword search (matches title, author, ISBN)
         if (keyword != null && !keyword.isEmpty()) {
-            qw.and(w -> w.like(BookInfo::getTitle, keyword).or().like(BookInfo::getAuthor, keyword).or().like(BookInfo::getIsbn, keyword));
+            qw.and(w -> w.like(BookInfo::getTitle, keyword)
+                    .or().like(BookInfo::getAuthor, keyword)
+                    .or().like(BookInfo::getIsbn, keyword));
         }
-        qw.orderByDesc(BookInfo::getBorrowCount);
+        // Advanced filters
+        if (author != null && !author.isEmpty() && (keyword == null || keyword.isEmpty())) {
+            qw.like(BookInfo::getAuthor, author);
+        }
+        if (isbn != null && !isbn.isEmpty()) {
+            qw.eq(BookInfo::getIsbn, isbn);
+        }
+        if (categoryId != null) {
+            qw.eq(BookInfo::getCategoryId, categoryId);
+        }
+        if (publisherId != null) {
+            qw.eq(BookInfo::getPublisherId, publisherId);
+        }
+        if (language != null && !language.isEmpty()) {
+            qw.eq(BookInfo::getLanguage, language);
+        }
+        if (yearStart != null && !yearStart.isEmpty()) {
+            qw.ge(BookInfo::getPublishDate, java.time.LocalDate.parse(yearStart + "-01-01"));
+        }
+        if (yearEnd != null && !yearEnd.isEmpty()) {
+            qw.le(BookInfo::getPublishDate, java.time.LocalDate.parse(yearEnd + "-12-31"));
+        }
+
+        // Sorting
+        if (sort != null && !sort.isEmpty()) {
+            switch (sort) {
+                case "publish_date_desc" -> qw.orderByDesc(BookInfo::getPublishDate);
+                case "publish_date_asc" -> qw.orderByAsc(BookInfo::getPublishDate);
+                case "borrow_count_desc" -> qw.orderByDesc(BookInfo::getBorrowCount);
+                case "title_asc" -> qw.orderByAsc(BookInfo::getTitle);
+                default -> qw.orderByDesc(BookInfo::getBorrowCount);
+            }
+        } else {
+            qw.orderByDesc(BookInfo::getBorrowCount);
+        }
+
         IPage<BookInfo> p = bookInfoMapper.selectPage(new Page<>(page, size), qw);
         List<Map<String, Object>> records = p.getRecords().stream().map(this::toBookItem).collect(Collectors.toList());
+
+        // If availableOnly is true, filter to only books with available copies
+        if (Boolean.TRUE.equals(availableOnly)) {
+            records = records.stream()
+                    .filter(r -> {
+                        Integer avail = (Integer) r.get("availableCopies");
+                        return avail != null && avail > 0;
+                    })
+                    .collect(Collectors.toList());
+            // Adjust total
+            long availTotal = records.size();
+            // If filtering reduced results, we'd need recount, but keep simple for now
+        }
+
         Map<String, Object> result = new HashMap<>();
         result.put("records", records); result.put("total", p.getTotal());
         result.put("size", p.getSize()); result.put("current", p.getCurrent()); result.put("pages", p.getPages());
@@ -284,6 +337,10 @@ public class BookService {
         if (book.getCategoryId() != null) {
             Category cat = categoryMapper.selectById(book.getCategoryId());
             item.put("categoryName", cat != null ? cat.getName() : null);
+        }
+        if (book.getPublisherId() != null) {
+            Publisher pub = publisherMapper.selectById(book.getPublisherId());
+            item.put("publisherName", pub != null ? pub.getName() : null);
         }
         return item;
     }

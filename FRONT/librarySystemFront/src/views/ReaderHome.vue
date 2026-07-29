@@ -1,32 +1,59 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { searchBooks, getHotBooks, getNewArrivals, getCategoryTree } from '../api/books'
+import { getHotBooks, getNewArrivals, getCategoryTree } from '../api/books'
 import type { BookItem } from '../api/books'
 
 const router = useRouter()
 
 // Nav
-const navLinks = ['Home', 'Browse', 'Categories', 'My Books']
 const realName = ref(localStorage.getItem('realName') || 'Reader')
 const userInitials = ref(realName.value.charAt(0).toUpperCase())
 
 // Search
 const keyword = ref('')
-const activeFilter = ref('All')
-const filters = ['All', 'Available', 'E-Books', 'Audio Books']
-
-// Categories
-const categories = [
-  { name: 'Literature', emoji: '📖' },
-  { name: 'Science', emoji: '🔬' },
-  { name: 'Technology', emoji: '💻' },
-  { name: 'History', emoji: '🏛️' },
-  { name: 'Philosophy', emoji: '💭' },
-  { name: 'Art', emoji: '🎨' },
-  { name: 'Economics', emoji: '📊' },
-  { name: 'Education', emoji: '📝' },
+const activeFilter = ref('all')
+const filters = [
+  { key: 'all', label: '全部' },
+  { key: 'available', label: '可借' },
 ]
+
+// Categories from API
+interface CategoryItem {
+  id: number
+  name: string
+  emoji: string
+  children?: CategoryItem[]
+}
+const categories = ref<CategoryItem[]>([])
+
+// Emoji map for top-level categories
+const categoryEmojis: Record<string, string> = {
+  '马克思主义、列宁主义、毛泽东思想、邓小平理论': '📕',
+  '哲学、宗教': '💭',
+  '社会科学总论': '📊',
+  '政治、法律': '⚖️',
+  '军事': '⚔️',
+  '经济': '💰',
+  '文化、科学、教育、体育': '📚',
+  '语言、文字': '🔤',
+  '文学': '📖',
+  '艺术': '🎨',
+  '历史、地理': '🏛️',
+  '自然科学总论': '🔬',
+  '数理科学和化学': '🧮',
+  '天文学、地球科学': '🌍',
+  '生物科学': '🧬',
+  '医药、卫生': '🏥',
+  '农业科学': '🌾',
+  '工业技术': '⚙️',
+  '交通运输': '🚗',
+  '航空、航天': '🚀',
+  '环境科学、安全科学': '🌿',
+  '综合性图书': '📚',
+}
+
+const defaultEmojis = ['📕', '💭', '📊', '⚖️', '⚔️', '💰', '📚', '🔤', '📖', '🎨', '🏛️', '🔬', '🧮', '🌍', '🧬', '🏥', '🌾', '⚙️', '🚗', '🚀', '🌿', '📚']
 
 // Books
 const hotBooks = ref<BookItem[]>([])
@@ -35,18 +62,30 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const [hot, newArrivals] = await Promise.all([
+    const [hot, newArrivals, catTree] = await Promise.all([
       getHotBooks(4).catch(() => []),
       getNewArrivals(30, 4).catch(() => []),
+      getCategoryTree().catch(() => []),
     ])
     hotBooks.value = hot.length > 0 ? hot : getDemoBooks()
     newBooks.value = newArrivals
+    categories.value = buildCategoryList(catTree)
   } catch {
     hotBooks.value = getDemoBooks()
+    categories.value = getDemoCategories()
   } finally {
     loading.value = false
   }
 })
+
+function buildCategoryList(tree: any[]): CategoryItem[] {
+  return tree.map((c, i) => ({
+    id: c.id,
+    name: c.name,
+    emoji: categoryEmojis[c.name] || defaultEmojis[i % defaultEmojis.length] || '📚',
+    children: c.children,
+  }))
+}
 
 function getDemoBooks(): BookItem[] {
   return [
@@ -57,8 +96,25 @@ function getDemoBooks(): BookItem[] {
   ]
 }
 
+function getDemoCategories(): CategoryItem[] {
+  return [
+    { id: 9, name: '文学', emoji: '📖' },
+    { id: 2, name: '哲学、宗教', emoji: '💭' },
+    { id: 6, name: '经济', emoji: '💰' },
+    { id: 18, name: '工业技术', emoji: '⚙️' },
+    { id: 7, name: '文化、科学、教育、体育', emoji: '📚' },
+    { id: 8, name: '语言、文字', emoji: '🔤' },
+    { id: 10, name: '艺术', emoji: '🎨' },
+    { id: 11, name: '历史、地理', emoji: '🏛️' },
+  ]
+}
+
 function doSearch() {
   router.push({ path: '/books', query: { keyword: keyword.value } })
+}
+
+function goToCategory(catId: number) {
+  router.push({ path: '/books', query: { categoryId: catId } })
 }
 
 function goToDetail(bookId: number) {
@@ -68,15 +124,30 @@ function goToDetail(bookId: number) {
 function goToDashboard() {
   router.push('/reader')
 }
+
+function goToSearch() {
+  router.push({ path: '/books' })
+}
+
+function goToSearchByFilter(filter: string) {
+  if (filter === 'available') {
+    router.push({ path: '/books', query: { availableOnly: 'true' } })
+  } else {
+    router.push({ path: '/books' })
+  }
+}
 </script>
 
 <template>
   <div class="reader-home">
-    <!-- Nav Bar (1440×68) -->
+    <!-- Nav Bar -->
     <nav class="nav">
       <span class="nav__logo">📚 LibraryOS</span>
       <div class="nav__links">
-        <span v-for="link in navLinks" :key="link" class="nav__link">{{ link }}</span>
+        <span class="nav__link nav__link--active" @click="goToSearch">首页</span>
+        <span class="nav__link" @click="goToSearch">浏览</span>
+        <span class="nav__link" @click="goToSearch">分类</span>
+        <span class="nav__link" @click="goToDashboard">我的</span>
       </div>
       <div class="nav__user">
         <span class="nav__username">{{ realName }}</span>
@@ -84,34 +155,34 @@ function goToDashboard() {
       </div>
     </nav>
 
-    <!-- Hero Section (1440×322) -->
+    <!-- Hero Section -->
     <section class="hero">
-      <h1 class="hero__title">What book are you looking for?</h1>
-      <p class="hero__sub">Search from thousands of books in our collection</p>
+      <h1 class="hero__title">想找什么书？</h1>
+      <p class="hero__sub">从海量馆藏中搜索你心仪的图书</p>
 
-      <!-- Search Bar (600×48, pill) -->
+      <!-- Search Bar (pill) -->
       <div class="search-bar">
         <span class="search-icon">🔍</span>
         <div class="search-input-area">
           <input
             v-model="keyword"
             class="search-input"
-            placeholder="Search by title, author, or ISBN..."
+            placeholder="按书名、作者或ISBN搜索..."
             @keyup.enter="doSearch"
           />
         </div>
-        <button class="search-btn" @click="doSearch">Search</button>
+        <button class="search-btn" @click="doSearch">搜索</button>
       </div>
 
       <!-- Quick Filters -->
       <div class="quick-filters">
         <div
           v-for="f in filters"
-          :key="f"
-          :class="['filter-chip', { 'filter-chip--active': activeFilter === f }]"
-          @click="activeFilter = f"
+          :key="f.key"
+          :class="['filter-chip', { 'filter-chip--active': activeFilter === f.key }]"
+          @click="activeFilter = f.key; goToSearchByFilter(f.key)"
         >
-          {{ f }}
+          {{ f.label }}
         </div>
       </div>
     </section>
@@ -119,13 +190,18 @@ function goToDashboard() {
     <!-- Categories Section -->
     <section class="categories-section">
       <div class="section-header">
-        <h2 class="section-title">Browse by Category</h2>
-        <a class="section-viewall">View all →</a>
+        <h2 class="section-title">按分类浏览</h2>
+        <a class="section-viewall" @click="goToSearch">查看全部 →</a>
       </div>
       <div class="category-grid">
-        <div v-for="cat in categories" :key="cat.name" class="category-card">
+        <div
+          v-for="cat in categories.slice(0, 8)"
+          :key="cat.id"
+          class="category-card"
+          @click="goToCategory(cat.id)"
+        >
           <span class="category-emoji">{{ cat.emoji }}</span>
-          <span class="category-label">{{ cat.name }}</span>
+          <span class="category-label">{{ cat.name.length > 8 ? cat.name.slice(0, 7) + '…' : cat.name }}</span>
         </div>
       </div>
     </section>
@@ -133,11 +209,11 @@ function goToDashboard() {
     <!-- Hot Books Section -->
     <section class="hot-section">
       <div class="section-header">
-        <h2 class="section-title">🔥 Hot Picks This Week</h2>
-        <a class="section-viewall">View all →</a>
+        <h2 class="section-title">🔥 本周热门</h2>
+        <a class="section-viewall" @click="goToSearch">查看全部 →</a>
       </div>
 
-      <div v-if="loading" class="loading-msg">Loading books...</div>
+      <div v-if="loading" class="loading-msg">正在加载图书...</div>
 
       <div v-if="!loading" class="book-grid">
         <div v-for="book in hotBooks" :key="book.id" class="book-card" @click="goToDetail(book.id)">
@@ -145,11 +221,13 @@ function goToDashboard() {
             <span class="book-cover-icon">📖</span>
           </div>
           <div class="book-info">
-            <h3 class="book-title">{{ book.title }}</h3>
-            <p class="book-author">{{ book.author }}</p>
+            <h3 class="book-title" :title="book.title">{{ book.title }}</h3>
+            <p class="book-author" :title="book.author">{{ book.author }}</p>
             <div class="book-meta">
               <span class="book-tag book-tag--warning">★ {{ book.rating ?? '–' }}</span>
-              <span class="book-tag book-tag--success">{{ book.availableCopies }}/{{ book.totalCopies }}</span>
+              <span :class="['book-tag', book.availableCopies > 0 ? 'book-tag--success' : 'book-tag--danger']">
+                {{ book.availableCopies }}/{{ book.totalCopies }}
+              </span>
             </div>
           </div>
         </div>
@@ -167,7 +245,7 @@ function goToDashboard() {
   background: var(--bg-secondary, #F7F8FA);
 }
 
-/* ===== Nav Bar (1440×68) ===== */
+/* ===== Nav Bar ===== */
 .nav {
   display: flex;
   align-items: center;
@@ -199,7 +277,11 @@ function goToDashboard() {
   cursor: pointer;
   transition: color 0.15s;
 }
-.nav__link:hover { color: var(--accent, #4A9FD8); }
+
+.nav__link:hover,
+.nav__link--active {
+  color: var(--accent, #4A9FD8);
+}
 
 .nav__avatar {
   width: 36px;
@@ -214,6 +296,7 @@ function goToDashboard() {
   font-weight: 600;
   color: var(--accent, #4A9FD8);
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .nav__user {
@@ -229,7 +312,7 @@ function goToDashboard() {
   color: var(--text-secondary, #666);
 }
 
-/* ===== Hero Section (1440×322) ===== */
+/* ===== Hero Section ===== */
 .hero {
   background: var(--bg-primary, #FFFFFF);
   padding: 60px 80px;
@@ -253,7 +336,7 @@ function goToDashboard() {
   margin: 0;
 }
 
-/* Search Bar (600×48, pill) */
+/* Search Bar (pill) */
 .search-bar {
   display: flex;
   align-items: center;
@@ -264,6 +347,11 @@ function goToDashboard() {
   border-radius: 999px;
   background: var(--bg-secondary, #F7F8FA);
   border: 1.5px solid var(--border, #E5E7EB);
+  transition: border-color 0.15s;
+}
+
+.search-bar:focus-within {
+  border-color: var(--accent, #4A9FD8);
 }
 
 .search-icon {
@@ -307,6 +395,7 @@ function goToDashboard() {
   flex-shrink: 0;
   transition: opacity 0.15s;
 }
+
 .search-btn:hover { opacity: 0.9; }
 
 /* Quick Filters */
@@ -362,6 +451,7 @@ function goToDashboard() {
   cursor: pointer;
   transition: opacity 0.15s;
 }
+
 .section-viewall:hover { opacity: 0.8; }
 
 .loading-msg {
@@ -371,7 +461,7 @@ function goToDashboard() {
   font-size: 14px;
 }
 
-/* ===== Categories Section (padding: [40,80], gap:20) ===== */
+/* ===== Categories Section ===== */
 .categories-section {
   padding: 40px 80px;
   display: flex;
@@ -415,9 +505,10 @@ function goToDashboard() {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-primary, #1A1A1A);
+  text-align: center;
 }
 
-/* ===== Hot Books Section (padding: [0,80,40,80], gap:20) ===== */
+/* ===== Hot Books Section ===== */
 .hot-section {
   padding: 0 80px 40px 80px;
   display: flex;
@@ -443,6 +534,7 @@ function goToDashboard() {
   transition: box-shadow 0.15s, transform 0.15s;
   max-width: 308px;
 }
+
 .book-card:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   transform: translateY(-2px);
@@ -508,4 +600,5 @@ function goToDashboard() {
 
 .book-tag--warning { background: var(--warning, #FBBF24); }
 .book-tag--success { background: var(--success, #34D399); }
+.book-tag--danger { background: var(--danger, #F87171); }
 </style>

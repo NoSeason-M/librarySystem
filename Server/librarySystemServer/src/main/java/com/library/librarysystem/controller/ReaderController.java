@@ -1,9 +1,11 @@
 package com.library.librarysystem.controller;
 
 import com.library.librarysystem.common.Result;
+import com.library.librarysystem.security.UserDetailsImpl;
 import com.library.librarysystem.service.ReaderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -48,5 +50,19 @@ public class ReaderController {
     @PutMapping("/{id}/card") @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_LIBRARIAN')")
     public Result<Void> cardAction(@PathVariable Long id, @RequestBody Map<String, String> req) {
         readerService.updateCardStatus(id, req.get("action")); return Result.success();
+    }
+
+    // ==================== Reader Self-Service ====================
+
+    @GetMapping("/my-profile")
+    public Result<Map<String, Object>> myProfile(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        return Result.success(readerService.getMyProfile(userDetails.getId()));
+    }
+
+    @PutMapping("/my-profile")
+    public Result<Void> updateMyProfile(@AuthenticationPrincipal UserDetailsImpl userDetails,
+            @RequestBody Map<String, Object> req) {
+        readerService.updateMyProfile(userDetails.getId(), req);
+        return Result.success();
     }
 }

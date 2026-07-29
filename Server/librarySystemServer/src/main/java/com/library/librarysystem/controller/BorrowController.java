@@ -32,6 +32,14 @@ public class BorrowController {
         return Result.success(borrowService.getReaderSummary(readerNo));
     }
 
+    @GetMapping("/history")
+    public Result<List<Map<String, Object>>> history(
+            @RequestParam String readerNo,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        return Result.success(borrowService.getBorrowHistory(readerNo, startDate, endDate));
+    }
+
     // ==================== Admin: Borrow flow ====================
 
     /**
@@ -64,6 +72,20 @@ public class BorrowController {
         String readerNo = (String) req.get("readerNo");
         List<String> barcodes = (List<String>) req.get("barcodes");
         return Result.success(borrowService.borrowBooks(readerNo, barcodes, user.getId()));
+    }
+
+    // ==================== Renew ====================
+
+    /**
+     * Renew a borrowed book.
+     * Matches API.md 5.3: POST /borrow/{id}/renew
+     */
+    @PostMapping("/{id}/renew")
+    public Result<Map<String, Object>> renew(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> req) {
+        String readerNo = (String) req.get("readerNo");
+        return Result.success(borrowService.renewBook(id, readerNo));
     }
 
     // ==================== Admin: Return flow ====================

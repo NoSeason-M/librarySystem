@@ -60,9 +60,21 @@ public class BookController {
         bookService.exportBooks(response, keyword);
     }
 
-    @GetMapping public Result<Map<String, Object>> search(@RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
-        return Result.success(bookService.searchBooks(keyword, page, size));
+    @GetMapping
+    public Result<Map<String, Object>> search(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String author,
+            @RequestParam(required = false) String isbn,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long publisherId,
+            @RequestParam(required = false) String language,
+            @RequestParam(required = false) String yearStart,
+            @RequestParam(required = false) String yearEnd,
+            @RequestParam(required = false, name = "availableOnly") Boolean availableOnly,
+            @RequestParam(required = false) String sort,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return Result.success(bookService.searchBooks(keyword, author, isbn, categoryId, publisherId, language, yearStart, yearEnd, availableOnly, sort, page, size));
     }
     @GetMapping("/hot") public Result<List<Map<String, Object>>> hot(@RequestParam(defaultValue = "10") int limit) {
         return Result.success(bookService.getHotBooks(limit));

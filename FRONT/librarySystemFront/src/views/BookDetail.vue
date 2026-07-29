@@ -15,7 +15,7 @@ const loading = ref(true)
 const activeTab = ref('Description')
 const error = ref('')
 
-const tabs = ['Description', 'Copies', 'Reviews', 'History']
+const tabs = ['内容简介', '馆藏信息', '评价', '借阅历史']
 
 const availableCount = computed(() => book.value?.availableCopies ?? 0)
 const borrowedCount = computed(() => (book.value?.totalCopies ?? 0) - (book.value?.availableCopies ?? 0))
@@ -100,14 +100,14 @@ function statusBadgeColor(status: string): string {
 
     <!-- Main Content (padding [40,80], gap=28) -->
     <main class="main">
-      <div v-if="loading" class="loading-msg">Loading book details...</div>
+      <div v-if="loading" class="loading-msg">正在加载图书详情...</div>
       <div v-if="error" class="error-msg">{{ error }}</div>
 
       <template v-if="!loading && book">
         <!-- ← Back -->
         <div class="back-row" @click="goBack">
           <span class="back-arrow">←</span>
-          <span class="back-link">Back to results</span>
+          <span class="back-link">返回搜索结果</span>
         </div>
 
         <!-- Book Hero (horizontal, gap=40) -->
@@ -125,13 +125,13 @@ function statusBadgeColor(status: string): string {
             <!-- Title -->
             <div class="title-section">
               <h1 class="book-title">{{ book.title }}</h1>
-              <p class="book-author" v-if="book.author">by {{ book.author }}</p>
+              <p class="book-author" v-if="book.author">作者：{{ book.author }}</p>
             </div>
 
             <!-- Meta: Rating + Reviews -->
             <div class="meta-row">
               <span class="meta-rating">★★★★½  {{ book.rating ?? '–' }}</span>
-              <span class="meta-reviews" v-if="book.ratingCount">({{ book.ratingCount }} reviews)</span>
+              <span class="meta-reviews" v-if="book.ratingCount">({{ book.ratingCount }} 人评价)</span>
             </div>
 
             <!-- Tags -->
@@ -145,18 +145,18 @@ function statusBadgeColor(status: string): string {
             <!-- Availability -->
             <div class="avail-row">
               <div class="avail-card">
-                <span class="avail-label">Available</span>
+                <span class="avail-label">可借</span>
                 <span class="avail-value avail-value--success">{{ availableCount }}</span>
               </div>
               <div class="avail-card">
-                <span class="avail-label">Borrowed</span>
+                <span class="avail-label">已借</span>
                 <span class="avail-value avail-value--warning">{{ borrowedCount }}</span>
               </div>
             </div>
 
             <!-- Actions -->
             <div class="action-row">
-              <button class="btn-borrow">Borrow This Book</button>
+              <button class="btn-borrow">借阅此书</button>
               <button class="btn-fav">♡</button>
             </div>
           </div>
@@ -175,24 +175,24 @@ function statusBadgeColor(status: string): string {
           <div class="tab-divider"></div>
 
           <!-- Description Tab -->
-          <div v-if="activeTab === 'Description'" class="tab-content">
-            <h3 class="tab-section-title">About this book</h3>
-            <p class="tab-description">{{ book.summary || 'No description available.' }}</p>
+          <div v-if="activeTab === '内容简介'" class="tab-content">
+            <h3 class="tab-section-title">关于本书</h3>
+            <p class="tab-description">{{ book.summary || '暂无简介。' }}</p>
           </div>
 
           <!-- Copies Tab -->
-          <div v-if="activeTab === 'Copies'" class="tab-content">
-            <h3 class="tab-section-title">Copies in Library</h3>
+          <div v-if="activeTab === '馆藏信息'" class="tab-content">
+            <h3 class="tab-section-title">馆藏副本</h3>
             <div class="copies-table">
               <!-- Head -->
               <div class="table-head">
-                <span class="th">Barcode</span>
-                <span class="th">Location</span>
-                <span class="th">Status</span>
-                <span class="th">Due Date</span>
+                <span class="th">条码号</span>
+                <span class="th">馆藏地</span>
+                <span class="th">状态</span>
+                <span class="th">应还日期</span>
               </div>
               <!-- Rows -->
-              <div v-if="copies.length === 0" class="empty-row">No copies found</div>
+              <div v-if="copies.length === 0" class="empty-row">无馆藏记录</div>
               <div v-for="copy in copies" :key="copy.id" class="table-row">
                 <span class="td td--mono">{{ copy.barcode }}</span>
                 <span class="td">{{ copy.locationName || '—' }}</span>
@@ -207,15 +207,15 @@ function statusBadgeColor(status: string): string {
           </div>
 
           <!-- Reviews (placeholder) -->
-          <div v-if="activeTab === 'Reviews'" class="tab-content">
-            <h3 class="tab-section-title">Reviews</h3>
-            <p class="tab-description tab-description--empty">Reviews coming soon.</p>
+          <div v-if="activeTab === '评价'" class="tab-content">
+            <h3 class="tab-section-title">读者评价</h3>
+            <p class="tab-description tab-description--empty">评价功能即将上线。</p>
           </div>
 
           <!-- History (placeholder) -->
-          <div v-if="activeTab === 'History'" class="tab-content">
-            <h3 class="tab-section-title">Borrowing History</h3>
-            <p class="tab-description tab-description--empty">Borrowing history coming soon.</p>
+          <div v-if="activeTab === '借阅历史'" class="tab-content">
+            <h3 class="tab-section-title">借阅历史</h3>
+            <p class="tab-description tab-description--empty">借阅历史即将上线。</p>
           </div>
         </div>
       </template>

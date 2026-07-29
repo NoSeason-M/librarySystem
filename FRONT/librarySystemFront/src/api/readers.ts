@@ -63,3 +63,11 @@ export async function cardAction(id: number, action: string): Promise<void> {
 export async function freezeAction(id: number, action: string): Promise<void> {
   return http.put(`/readers/${id}/freeze`, { action }) as any
 }
+
+export async function getMyProfile(): Promise<any> {
+  return http.get('/readers/my-profile') as any
+}
+
+export async function updateMyProfile(data: { realName?: string; email?: string; phone?: string }): Promise<void> {
+  return http.put('/readers/my-profile', data) as any
+}

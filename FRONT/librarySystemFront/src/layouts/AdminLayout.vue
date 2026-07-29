@@ -8,13 +8,13 @@ const realName = ref(localStorage.getItem('realName') || 'Admin')
 const userInitials = ref(realName.value.charAt(0).toUpperCase())
 
 const adminNav = [
-  { icon: '📊', label: 'Dashboard', route: '/admin' },
-  { icon: '📖', label: 'Borrow/Return', route: '/admin/borrow-return' },
-  { icon: '📚', label: 'Books', route: '/admin/books' },
-  { icon: '👥', label: 'Readers', route: '/admin/readers' },
-  { icon: '📈', label: 'Statistics', route: '/admin/statistics' },
-  { icon: '💰', label: 'Fines' },
-  { icon: '⚙️', label: 'Settings', route: '/admin/settings' },
+  { icon: '📊', label: '工作台', route: '/admin' },
+  { icon: '📖', label: '借还管理', route: '/admin/borrow-return' },
+  { icon: '📚', label: '图书管理', route: '/admin/books' },
+  { icon: '👥', label: '读者管理', route: '/admin/readers' },
+  { icon: '📈', label: '统计分析', route: '/admin/statistics' },
+  { icon: '💰', label: '罚款管理' },
+  { icon: '⚙️', label: '系统设置', route: '/admin/settings' },
 ]
 
 function navigateTo(item: { label: string; route?: string }) {

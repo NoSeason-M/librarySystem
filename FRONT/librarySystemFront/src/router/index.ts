@@ -6,9 +6,22 @@ const router = createRouter({
     { path: '/', redirect: '/login' },
     { path: '/login', name: 'Login', component: () => import('../views/Login.vue') },
     { path: '/register', name: 'Register', component: () => import('../views/Register.vue') },
+    { path: '/books', name: 'BookSearch', component: () => import('../views/BookSearch.vue'), meta: { requiresAuth: true } },
     { path: '/books/:id', name: 'BookDetail', component: () => import('../views/BookDetail.vue'), meta: { requiresAuth: true } },
     { path: '/home', name: 'ReaderHome', component: () => import('../views/ReaderHome.vue'), meta: { requiresAuth: true } },
-    { path: '/reader', name: 'ReaderDashboard', component: () => import('../views/ReaderDashboard.vue'), meta: { requiresAuth: true } },
+    {
+      path: '/reader',
+      component: () => import('../layouts/ReaderLayout.vue'),
+      meta: { requiresAuth: true },
+      children: [
+        { path: '', name: 'ReaderBorrowing', component: () => import('../views/ReaderBorrowing.vue') },
+        { path: 'history', name: 'ReaderHistory', component: () => import('../views/ReaderHistory.vue') },
+        { path: 'reservations', name: 'ReaderReservations', component: () => import('../views/ReaderReservations.vue') },
+        { path: 'favorites', name: 'ReaderFavorites', component: () => import('../views/ReaderFavorites.vue') },
+        { path: 'fines', name: 'ReaderFines', component: () => import('../views/ReaderFines.vue') },
+      ],
+    },
+    { path: '/reader/settings', name: 'ReaderSettings', component: () => import('../views/ReaderSettings.vue'), meta: { requiresAuth: true } },
     {
       path: '/admin',
       component: () => import('../layouts/AdminLayout.vue'),

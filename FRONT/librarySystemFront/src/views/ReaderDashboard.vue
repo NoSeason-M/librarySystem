@@ -5,26 +5,26 @@ import { getCurrentBorrowing, getBorrowSummary } from '../api/borrow'
 
 const router = useRouter()
 
-const realName = ref(localStorage.getItem('realName') || 'Reader')
+const realName = ref(localStorage.getItem('realName') || '读者')
 const readerInfo = reactive({
   name: realName.value,
   initials: realName.value.charAt(0).toUpperCase(),
   readerNo: 'RD20260001',
-  readerType: 'Student',
+  readerType: '学生',
 })
 
 const stats = reactive({
-  borrowed: { value: '—', label: 'books' },
-  overdue: { value: '—', label: 'book', color: '#F87171' },
-  reservations: { value: '—', label: 'pending', color: '#FBBF24' },
-  fines: { value: '—', label: 'unpaid', color: '#F87171' },
+  borrowed: { value: '—', label: '本在借', color: '#4A9FD8' },
+  overdue: { value: '—', label: '本逾期', color: '#F87171' },
+  reservations: { value: '—', label: '个预约', color: '#FBBF24' },
+  fines: { value: '—', label: '未缴罚款', color: '#F87171' },
 })
 
 const borrowings = ref<any[]>([])
 const loading = ref(true)
 const error = ref('')
 
-const navLinks = ['Home', 'Browse', 'My Books', 'Profile']
+const navLinks = ['首页', '浏览', '我的', '个人中心']
 
 onMounted(async () => {
   try {
@@ -39,19 +39,25 @@ onMounted(async () => {
     const list = await getCurrentBorrowing(readerInfo.readerNo).catch(() => [])
     // If no real data, use demo data per design spec
     borrowings.value = list.length > 0 ? list : [
-      { bookTitle: 'The Great Gatsby', bookAuthor: 'F. Scott Fitzgerald', dueDate: 'Aug 20, 2026', remainingDays: 28, overdue: false, overdueDays: 0, canRenew: true },
-      { bookTitle: 'To Kill a Mockingbird', bookAuthor: 'Harper Lee', dueDate: 'Jul 30, 2026', remainingDays: 0, overdue: true, overdueDays: 5, canRenew: false },
-      { bookTitle: '1984', bookAuthor: 'George Orwell', dueDate: 'Sep 5, 2026', remainingDays: 44, overdue: false, overdueDays: 0, canRenew: true },
+      { bookTitle: 'The Great Gatsby', bookAuthor: 'F. Scott Fitzgerald', dueDate: '2026-08-20', remainingDays: 28, overdue: false, overdueDays: 0, canRenew: true },
+      { bookTitle: 'To Kill a Mockingbird', bookAuthor: 'Harper Lee', dueDate: '2026-07-30', remainingDays: 0, overdue: true, overdueDays: 5, canRenew: false },
+      { bookTitle: '1984', bookAuthor: 'George Orwell', dueDate: '2026-09-05', remainingDays: 44, overdue: false, overdueDays: 0, canRenew: true },
     ]
   } catch {
-    error.value = 'Failed to load data'
+    error.value = '数据加载失败'
   } finally {
     loading.value = false
   }
 })
 
 function navigateTo(label: string) {
-  if (label === 'Home') router.push('/home')
+  if (label === '首页') router.push('/home')
+  if (label === '浏览') router.push('/books')
+  if (label === '个人中心') router.push('/reader')
+}
+
+function goToSettings() {
+  router.push('/reader/settings')
 }
 
 function goToBookDetail(bookInfoId: number) {
@@ -76,7 +82,7 @@ function goToBookDetail(bookInfoId: number) {
     <!-- Main Layout -->
     <main class="main">
       <div v-if="error" class="error-msg">{{ error }}</div>
-      <div v-if="loading" class="loading-msg">Loading...</div>
+      <div v-if="loading" class="loading-msg">加载中...</div>
 
       <template v-if="!loading">
         <!-- Sidebar -->
@@ -92,10 +98,10 @@ function goToBookDetail(bookInfoId: number) {
           <!-- Quick Links -->
           <div class="quick-links">
             <div v-for="link in [
-              { i:'📖', l:'My Borrowing' }, { i:'⏱', l:'Borrowing History' },
-              { i:'📌', l:'My Reservations' }, { i:'⭐', l:'My Favorites' },
-              { i:'💰', l:'My Fines' }, { i:'⚙️', l:'Settings' }
-            ]" :key="link.l" class="quick-link">
+              { i:'📖', l:'当前借阅' }, { i:'⏱', l:'借阅历史' },
+              { i:'📌', l:'我的预约' }, { i:'⭐', l:'我的收藏' },
+              { i:'💰', l:'我的罚款' }, { i:'⚙️', l:'设置' }
+            ]" :key="link.l" class="quick-link" @click="link.l === '设置' && goToSettings()">
               <span>{{ link.i }}</span>
               <span>{{ link.l }}</span>
             </div>
@@ -106,29 +112,29 @@ function goToBookDetail(bookInfoId: number) {
         <div class="content">
           <!-- Welcome -->
           <div class="welcome">
-            <h1 class="welcome__title">Welcome back, {{ readerInfo.name }} 👋</h1>
-            <p class="welcome__sub">Here's your library activity overview</p>
+            <h1 class="welcome__title">欢迎回来，{{ readerInfo.name }} 👋</h1>
+            <p class="welcome__sub">以下是你的图书馆活动概览</p>
           </div>
 
           <!-- Stats -->
           <div class="stats-row">
             <div class="stat-card">
-              <span class="stat-label">Currently Borrowed</span>
+              <span class="stat-label">当前借阅</span>
               <span class="stat-value" style="color:var(--accent,#4A9FD8)">{{ stats.borrowed.value }}</span>
               <span class="stat-unit">{{ stats.borrowed.label }}</span>
             </div>
             <div class="stat-card">
-              <span class="stat-label">Overdue</span>
+              <span class="stat-label">逾期</span>
               <span class="stat-value" :style="{ color: stats.overdue.color }">{{ stats.overdue.value }}</span>
               <span class="stat-unit">{{ stats.overdue.label }}</span>
             </div>
             <div class="stat-card">
-              <span class="stat-label">Reservations</span>
+              <span class="stat-label">预约</span>
               <span class="stat-value" :style="{ color: stats.reservations.color }">{{ stats.reservations.value }}</span>
               <span class="stat-unit">{{ stats.reservations.label }}</span>
             </div>
             <div class="stat-card">
-              <span class="stat-label">Fines</span>
+              <span class="stat-label">罚款</span>
               <span class="stat-value" :style="{ color: stats.fines.color }">{{ stats.fines.value }}</span>
               <span class="stat-unit">{{ stats.fines.label }}</span>
             </div>
@@ -137,12 +143,12 @@ function goToBookDetail(bookInfoId: number) {
           <!-- Borrowing Section -->
           <div class="borrow-section">
             <div class="section-header">
-              <h2 class="section-title">Currently Borrowing</h2>
-              <a class="section-viewall">View all →</a>
+              <h2 class="section-title">当前借阅</h2>
+              <a class="section-viewall">查看全部 →</a>
             </div>
 
             <div class="borrow-list">
-              <div v-if="borrowings.length === 0" class="empty-state">No books currently borrowed</div>
+              <div v-if="borrowings.length === 0" class="empty-state">暂无借阅记录</div>
               <div v-for="book in borrowings" :key="book.bookTitle" class="borrow-item" style="cursor:pointer" @click="goToBookDetail(book.bookInfoId)">
                 <div class="borrow-indicator"
                   :style="{ background: book.overdue ? 'var(--danger,#F87171)' : 'var(--success,#34D399)' }">
@@ -150,13 +156,13 @@ function goToBookDetail(bookInfoId: number) {
                 <div class="borrow-info">
                   <p class="borrow-title">{{ book.bookTitle }}</p>
                   <p class="borrow-due" :class="{ 'borrow-due--overdue': book.overdue }">
-                    {{ book.overdue ? 'Overdue! Due: ' + book.dueDate : 'Due: ' + book.dueDate }}
+                    {{ book.overdue ? '已逾期！应还：' + book.dueDate : '应还：' + book.dueDate }}
                   </p>
                 </div>
                 <span class="borrow-days" :class="{ 'borrow-days--overdue': book.overdue }">
-                  {{ book.overdue ? book.overdueDays + ' days overdue' : book.remainingDays + ' days left' }}
+                  {{ book.overdue ? '逾期 ' + book.overdueDays + ' 天' : '剩余 ' + book.remainingDays + ' 天' }}
                 </span>
-                <span v-if="book.canRenew" class="borrow-action">Renew →</span>
+                <span v-if="book.canRenew" class="borrow-action">续借 →</span>
               </div>
             </div>
           </div>

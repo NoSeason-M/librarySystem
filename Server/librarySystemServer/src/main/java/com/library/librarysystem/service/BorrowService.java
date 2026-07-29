@@ -26,8 +26,45 @@ public class BorrowService {
     private final ReaderTypeMapper readerTypeMapper;
     private final FineRecordMapper fineRecordMapper;
     private final SysUserMapper userMapper;
+    private final ReservationMapper reservationMapper;
 
     // ==================== Reader-facing ====================
+
+    /**
+     * Get reader's borrowing history
+     */
+    public List<Map<String, Object>> getBorrowHistory(String readerNo, String startDate, String endDate) {
+        Reader reader = readerMapper.selectOne(
+                new LambdaQueryWrapper<Reader>().eq(Reader::getReaderNo, readerNo));
+        if (reader == null) return List.of();
+
+        LambdaQueryWrapper<BorrowRecord> qw = new LambdaQueryWrapper<BorrowRecord>()
+                .eq(BorrowRecord::getReaderId, reader.getId())
+                .eq(BorrowRecord::getStatus, "returned")
+                .orderByDesc(BorrowRecord::getCreateTime);
+
+        if (startDate != null && !startDate.isEmpty()) {
+            qw.ge(BorrowRecord::getBorrowDate, LocalDate.parse(startDate).atStartOfDay());
+        }
+        if (endDate != null && !endDate.isEmpty()) {
+            qw.le(BorrowRecord::getBorrowDate, LocalDate.parse(endDate).plusDays(1).atStartOfDay());
+        }
+
+        return borrowRecordMapper.selectList(qw).stream().map(r -> {
+            Map<String, Object> item = new HashMap<>();
+            BookInfo book = bookInfoMapper.selectById(r.getBookInfoId());
+            item.put("bookTitle", book != null ? book.getTitle() : "");
+            BookCopy copy = bookCopyMapper.selectById(r.getBookCopyId());
+            item.put("barcode", copy != null ? copy.getBarcode() : "");
+            item.put("borrowDate", r.getBorrowDate() != null ? r.getBorrowDate().toLocalDate().toString() : "");
+            item.put("dueDate", r.getDueDate() != null ? r.getDueDate().toString() : "");
+            item.put("returnDate", r.getReturnDate() != null ? r.getReturnDate().toLocalDate().toString() : "");
+            boolean wasOverdue = r.getDueDate() != null && r.getReturnDate() != null
+                    && r.getReturnDate().toLocalDate().isAfter(r.getDueDate());
+            item.put("status", wasOverdue ? "逾期归还" : "已归还");
+            return item;
+        }).collect(Collectors.toList());
+    }
 
     /**
      * Get reader's current borrowing
@@ -423,6 +460,73 @@ public class BorrowService {
 
         Map<String, Object> result = new HashMap<>();
         result.put("records", records);
+        return result;
+    }
+
+    // ==================== Renew ====================
+
+    /**
+     * Renew a borrowed book.
+     * Matches API.md 5.3: POST /borrow/{id}/renew
+     * Rules:
+     * - Due date ≤ 7 days away
+     * - Not overdue
+     * - Renew count not exceeded
+     * - No other reader has reserved this book
+     */
+    @Transactional
+    public Map<String, Object> renewBook(Long recordId, String readerNo) {
+        BorrowRecord record = borrowRecordMapper.selectById(recordId);
+        if (record == null) throw new BusinessException(404, "Borrow record not found");
+
+        // Verify the reader owns this record
+        Reader reader = readerMapper.selectById(record.getReaderId());
+        if (reader == null || !reader.getReaderNo().equals(readerNo)) {
+            throw new BusinessException("This borrow record does not belong to this reader");
+        }
+
+        // Check not overdue
+        if (record.getDueDate() != null && record.getDueDate().isBefore(LocalDate.now())) {
+            throw new BusinessException("Book is overdue — cannot renew, please return it first");
+        }
+
+        // Check due date within renewal window (≤ 7 days)
+        long daysUntilDue = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), record.getDueDate());
+        if (daysUntilDue > 7) {
+            throw new BusinessException("Book can only be renewed within 7 days of due date (currently " + daysUntilDue + " days left)");
+        }
+
+        // Get reader type for renewal settings
+        ReaderType rt = reader.getReaderTypeId() != null ?
+                readerTypeMapper.selectById(reader.getReaderTypeId()) : null;
+        int maxRenewCount = rt != null && rt.getRenewCount() != null ? rt.getRenewCount() : 1;
+        int renewDays = rt != null && rt.getRenewDays() != null ? rt.getRenewDays() : 15;
+
+        // Check renew count not exceeded
+        if (record.getRenewCount() >= maxRenewCount) {
+            throw new BusinessException("Renewal limit reached (max " + maxRenewCount + " time(s))");
+        }
+
+        // Check no other reader has reserved this book
+        long reservationCount = reservationMapper.selectCount(
+                new LambdaQueryWrapper<Reservation>()
+                        .eq(Reservation::getBookInfoId, record.getBookInfoId())
+                        .in(Reservation::getStatus, "waiting", "ready"));
+        if (reservationCount > 0) {
+            throw new BusinessException("Another reader has reserved this book — cannot renew");
+        }
+
+        // Execute renewal
+        LocalDate oldDueDate = record.getDueDate();
+        LocalDate newDueDate = oldDueDate.plusDays(renewDays);
+        record.setDueDate(newDueDate);
+        record.setRenewCount(record.getRenewCount() + 1);
+        borrowRecordMapper.updateById(record);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("oldDueDate", oldDueDate != null ? oldDueDate.toString() : "");
+        result.put("newDueDate", newDueDate.toString());
+        result.put("renewCount", record.getRenewCount());
         return result;
     }
 

@@ -6,17 +6,6 @@ import type { ReaderItem, ReaderType } from '../api/readers'
 
 const router = useRouter()
 
-// ===== Sidebar =====
-const adminNav = [
-  { icon: '📊', label: 'Dashboard' },
-  { icon: '📖', label: 'Borrow/Return' },
-  { icon: '📚', label: 'Books' },
-  { icon: '👥', label: 'Readers' },
-  { icon: '📈', label: 'Statistics' },
-  { icon: '💰', label: 'Fines' },
-  { icon: '⚙️', label: 'Settings' },
-]
-
 // ===== Table =====
 const keyword = ref('')
 const readers = ref<ReaderItem[]>([])
@@ -29,10 +18,10 @@ const errorMsg = ref('')
 
 // ===== Filters =====
 const defaultReaderTypes: ReaderType[] = [
-  { id: 1, name: 'Student', code: 'STUDENT', maxBorrow: 5, borrowDays: 30 },
-  { id: 2, name: 'Teacher', code: 'TEACHER', maxBorrow: 10, borrowDays: 60 },
-  { id: 3, name: 'Staff', code: 'STAFF', maxBorrow: 8, borrowDays: 45 },
-  { id: 4, name: 'External', code: 'EXTERNAL', maxBorrow: 3, borrowDays: 14 },
+  { id: 1, name: '学生', code: 'STUDENT', maxBorrow: 5, borrowDays: 30 },
+  { id: 2, name: '教师', code: 'TEACHER', maxBorrow: 10, borrowDays: 60 },
+  { id: 3, name: '教职工', code: 'STAFF', maxBorrow: 8, borrowDays: 45 },
+  { id: 4, name: '校外读者', code: 'EXTERNAL', maxBorrow: 3, borrowDays: 14 },
 ]
 const readerTypes = ref<ReaderType[]>(defaultReaderTypes)
 const selectedTypeId = ref<number | undefined>(undefined)
@@ -43,10 +32,10 @@ const advSearch = ref({ readerNo: "", email: "", registerDateStart: "", register
 const statusDropdownOpen = ref(false)
 
 const statusFilterOptions = [
-  { value: undefined, label: 'Card Status' },
-  { value: 1, label: 'Normal' },
-  { value: 0, label: 'Lost' },
-  { value: 2, label: 'Frozen' },
+  { value: undefined, label: '卡状态' },
+  { value: 1, label: '正常' },
+  { value: 0, label: '挂失' },
+  { value: 2, label: '冻结' },
 ]
 
 // ===== Modal =====
@@ -97,13 +86,13 @@ const visiblePages = computed(() => {
 async function loadReaders() {
   loading.value = true
   try {
-    const result = await listReaders(keyword.value || undefined, selectedTypeId.value, selectedCardStatus.value, advSearch.value.readerNo || undefined, advSearch.value.email || undefined, advSearch.value.registerDateStart || undefined, advSearch.value.registerDateEnd || undefined, currentPage.value, pageSize)
+    const result = await listReaders(keyword.value || undefined, selectedTypeId.value, selectedCardStatus.value, currentPage.value, pageSize)
     readers.value = result.records
     total.value = result.total
     totalPages.value = result.pages || 1
   } catch {
     readers.value = []
-    errorMsg.value = 'Failed to load readers'
+    errorMsg.value = '加载读者失败'
   } finally {
     loading.value = false
   }
@@ -138,11 +127,6 @@ function goToPage(page: number) {
   loadReaders()
 }
 
-function navigateTo(label: string) {
-  if (label === 'Dashboard') router.push('/admin')
-  else if (label === 'Books') router.push('/admin/books')
-}
-
 function getCardStatusColor(status: number | undefined): string {
   if (status === undefined || status === 1) return 'var(--success, #34D399)'
   if (status === 0) return 'var(--danger, #F87171)'
@@ -151,10 +135,10 @@ function getCardStatusColor(status: number | undefined): string {
 }
 
 function getCardStatusLabel(status: number | undefined): string {
-  if (status === undefined || status === 1) return 'Normal'
-  if (status === 0) return 'Lost'
-  if (status === 2) return 'Frozen'
-  return 'Unknown'
+  if (status === undefined || status === 1) return '正常'
+  if (status === 0) return '挂失'
+  if (status === 2) return '冻结'
+  return '未知'
 }
 
 function getInitials(name: string): string {
@@ -174,14 +158,13 @@ async function handleCardAction(action: string) {
   cardActionMsg.value = ''
   try {
     await cardAction(cardReader.value.id, action)
-    cardActionMsg.value = 'Card status updated!'
+    cardActionMsg.value = '读者证状态已更新！'
     loadReaders()
-    // Update local state
     const actionMap: Record<string, number> = { lost: 0, restore: 1, freeze: 2, unfreeze: 1 }
     cardReader.value.cardStatus = actionMap[action] ?? 1
     setTimeout(() => { showCardModal.value = false }, 800)
   } catch (err: any) {
-    cardActionMsg.value = err.message || 'Action failed'
+    cardActionMsg.value = err.message || '操作失败'
   } finally {
     cardActionLoading.value = false
   }
@@ -196,7 +179,7 @@ function openAddModal() {
 
 async function submitAdd() {
   if (!addForm.value.realName.trim()) {
-    submitError.value = 'Name is required'
+    submitError.value = '请输入姓名'
     return
   }
   saving.value = true
@@ -207,7 +190,7 @@ async function submitAdd() {
     currentPage.value = 1
     loadReaders()
   } catch (err: any) {
-    submitError.value = err.message || 'Failed to create reader'
+    submitError.value = err.message || '创建读者失败'
   } finally {
     saving.value = false
   }
@@ -228,7 +211,7 @@ function openEditModal(reader: ReaderItem) {
 
 async function submitEdit() {
   if (!editForm.value.realName.trim()) {
-    editError.value = 'Name is required'
+    editError.value = '请输入姓名'
     return
   }
   editLoading.value = true
@@ -238,7 +221,7 @@ async function submitEdit() {
     showEditModal.value = false
     loadReaders()
   } catch (err: any) {
-    editError.value = err.message || 'Failed to update reader'
+    editError.value = err.message || '更新读者失败'
   } finally {
     editLoading.value = false
   }
@@ -252,14 +235,12 @@ onMounted(() => {
 
 <template>
   <div class="admin-readers">
-    <!-- Sidebar -->
 
-    <!-- Main -->
     <main class="main">
       <header class="header">
-        <h1 class="header__title">Readers</h1>
+        <h1 class="header__title">读者管理</h1>
         <button class="btn-add" @click="openAddModal">
-          <span class="btn-add__icon">+</span><span>Add New Reader</span>
+          <span class="btn-add__icon">+</span><span>新增读者</span>
         </button>
       </header>
 
@@ -267,14 +248,14 @@ onMounted(() => {
       <div class="toolbar">
         <div class="search-bar">
           <span class="search-icon">🔍</span>
-          <input v-model="keyword" class="search-input" placeholder="Search by name, reader no or phone..." @click="showAdvancedSearch = true" @keyup.enter="onSearch" />
-          <button class="search-btn" @click="onSearch">Search</button>
+          <input v-model="keyword" class="search-input" placeholder="按姓名、读者证号或电话搜索..." @click="showAdvancedSearch = true" @keyup.enter="onSearch" />
+          <button class="search-btn" @click="onSearch">搜索</button>
         </div>
         <div class="filter-dropdown" @click="typeDropdownOpen = !typeDropdownOpen; statusDropdownOpen = false">
-          <span>{{ selectedTypeId ? (readerTypes.find(t => t.id === selectedTypeId)?.name || 'All Types') : 'All Types' }}</span>
+          <span>{{ selectedTypeId ? (readerTypes.find(t => t.id === selectedTypeId)?.name || '全部类型') : '全部类型' }}</span>
           <span class="filter-arrow">▼</span>
           <div v-if="typeDropdownOpen" class="dropdown-menu">
-            <div class="dropdown-item" :class="{ 'dropdown-item--active': !selectedTypeId }" @click.stop="selectedTypeId = undefined; typeDropdownOpen = false; onSearch()">All Types</div>
+            <div class="dropdown-item" :class="{ 'dropdown-item--active': !selectedTypeId }" @click.stop="selectedTypeId = undefined; typeDropdownOpen = false; onSearch()">全部类型</div>
             <div v-for="t in readerTypes" :key="t.id"
               class="dropdown-item"
               :class="{ 'dropdown-item--active': selectedTypeId === t.id }"
@@ -282,7 +263,7 @@ onMounted(() => {
           </div>
         </div>
         <div class="filter-dropdown" @click="statusDropdownOpen = !statusDropdownOpen; typeDropdownOpen = false">
-          <span>{{ statusFilterOptions.find(o => o.value === selectedCardStatus)?.label || 'Card Status' }}</span>
+          <span>{{ statusFilterOptions.find(o => o.value === selectedCardStatus)?.label || '卡状态' }}</span>
           <span class="filter-arrow">▼</span>
           <div v-if="statusDropdownOpen" class="dropdown-menu">
             <div v-for="opt in statusFilterOptions" :key="String(opt.value)"
@@ -295,33 +276,33 @@ onMounted(() => {
 
       <div v-if="showAdvancedSearch" class="advanced-search">
         <div class="adv-row">
-          <div class="adv-field"><label>Reader No</label><input v-model="advSearch.readerNo" placeholder="Reader No" @keyup.enter="onSearch" /></div>
-          <div class="adv-field"><label>Email</label><input v-model="advSearch.email" placeholder="Email" @keyup.enter="onSearch" /></div>
-          <div class="adv-field"><label>Register Date</label></div>
+          <div class="adv-field"><label>读者证号</label><input v-model="advSearch.readerNo" placeholder="读者证号" @keyup.enter="onSearch" /></div>
+          <div class="adv-field"><label>邮箱</label><input v-model="advSearch.email" placeholder="邮箱" @keyup.enter="onSearch" /></div>
+          <div class="adv-field"><label>注册日期</label></div>
         </div>
         <div class="adv-row">
-          <div class="adv-field"><label>From</label><input v-model="advSearch.registerDateStart" type="date" /></div>
-          <div class="adv-field"><label>To</label><input v-model="advSearch.registerDateEnd" type="date" /></div>
+          <div class="adv-field"><label>起始</label><input v-model="advSearch.registerDateStart" type="date" /></div>
+          <div class="adv-field"><label>截止</label><input v-model="advSearch.registerDateEnd" type="date" /></div>
           <div class="adv-field"></div>
         </div>
       </div>
+
       <div class="table">
         <div class="table-head">
-          <span class="th" style="width:50px">Avatar</span>
-          <span class="th" style="width:150px">Name</span>
-          <span class="th" style="width:130px">Reader No</span>
-          <span class="th" style="width:90px">Type</span>
-          <span class="th" style="width:110px">Card Status</span>
-          <span class="th" style="width:70px">Borrowed</span>
-          <span class="th" style="width:130px">Phone</span>
-          <span class="th" style="width:150px">Email</span>
+          <span class="th" style="width:50px">头像</span>
+          <span class="th" style="width:150px">姓名</span>
+          <span class="th" style="width:130px">读者证号</span>
+          <span class="th" style="width:90px">类型</span>
+          <span class="th" style="width:110px">卡状态</span>
+          <span class="th" style="width:70px">在借</span>
+          <span class="th" style="width:130px">电话</span>
+          <span class="th" style="width:150px">邮箱</span>
           <span class="th-spacer"></span>
-          <span class="th th--right" style="width:110px">Actions</span>
+          <span class="th th--right" style="width:110px">操作</span>
         </div>
 
-
-        <div v-if="loading" class="table-empty">Loading...</div>
-        <div v-if="!loading && filteredReaders.length === 0" class="table-empty">No readers found</div>
+        <div v-if="loading" class="table-empty">加载中...</div>
+        <div v-if="!loading && filteredReaders.length === 0" class="table-empty">未找到读者</div>
         <div v-for="reader in filteredReaders" :key="reader.id" class="table-row">
           <div class="td" style="width:50px"><div class="avatar-circle">{{ getInitials(reader.realName) }}</div></div>
           <span class="td td--name" style="width:150px">{{ reader.realName }}</span>
@@ -335,15 +316,15 @@ onMounted(() => {
           <span class="td td--secondary" style="width:150px">{{ reader.email || '-' }}</span>
           <div class="td-spacer"></div>
           <div class="td td--actions" style="width:110px">
-            <button class="btn-action btn-action--edit" @click="openEditModal(reader)">Edit</button>
-            <button class="btn-action btn-action--card" @click="openCardModal(reader)">Card</button>
+            <button class="btn-action btn-action--edit" @click="openEditModal(reader)">编辑</button>
+            <button class="btn-action btn-action--card" @click="openCardModal(reader)">挂失</button>
           </div>
         </div>
       </div>
 
       <!-- Pagination -->
       <div class="pagination">
-        <span class="page-info">Showing {{ filteredReaders.length }} of {{ total }} results</span>
+        <span class="page-info">显示 {{ filteredReaders.length }} 条，共 {{ total }} 条</span>
         <div class="page-buttons">
           <span class="page-prev" :class="{ 'page--disabled': currentPage <= 1 }" @click="goToPage(currentPage - 1)">←</span>
           <template v-for="p in visiblePages" :key="p">
@@ -359,32 +340,32 @@ onMounted(() => {
     <div v-if="showCardModal" class="modal-overlay" @click.self="showCardModal = false">
       <div class="modal modal--sm">
         <div class="modal__header">
-          <h2 class="modal__title">Card Management</h2>
+          <h2 class="modal__title">读者证管理</h2>
           <button class="modal__close" @click="showCardModal = false">✕</button>
         </div>
         <div class="modal__body">
           <div v-if="cardReader" class="reader-info-card">
             <p class="reader-info-name">{{ cardReader.realName }}</p>
-            <p class="reader-info-detail">{{ cardReader.readerNo }} · {{ cardReader.readerTypeName }} · Current: {{ cardReader.currentBorrowed }} books</p>
+            <p class="reader-info-detail">{{ cardReader.readerNo }} · {{ cardReader.readerTypeName }} · 当前借阅: {{ cardReader.currentBorrowed }} 本</p>
             <span class="reader-info-badge" :style="{ background: getCardStatusColor(cardReader.cardStatus) }">{{ getCardStatusLabel(cardReader.cardStatus) }}</span>
           </div>
-          <div v-if="cardActionMsg" class="msg" :class="cardActionMsg.includes('updated') ? 'msg--success' : 'msg--error'">{{ cardActionMsg }}</div>
+          <div v-if="cardActionMsg" class="msg" :class="cardActionMsg.includes('更新') ? 'msg--success' : 'msg--error'">{{ cardActionMsg }}</div>
           <div class="card-actions">
             <button class="card-action-btn" :disabled="cardActionLoading" @click="handleCardAction('lost')">
               <span class="card-action-icon" style="color:var(--danger,#F87171)">🔴</span>
-              <span>Report Lost</span>
+              <span>挂失</span>
             </button>
             <button class="card-action-btn" :disabled="cardActionLoading" @click="handleCardAction('restore')">
               <span class="card-action-icon" style="color:var(--success,#34D399)">🟢</span>
-              <span>Restore Card</span>
+              <span>解挂</span>
             </button>
             <button class="card-action-btn" :disabled="cardActionLoading" @click="handleCardAction('freeze')">
               <span class="card-action-icon" style="color:var(--text-muted,#888)">⏸️</span>
-              <span>Freeze Card</span>
+              <span>冻结</span>
             </button>
             <button class="card-action-btn" :disabled="cardActionLoading" @click="handleCardAction('unfreeze')">
               <span class="card-action-icon" style="color:var(--accent,#4A9FD8)">▶️</span>
-              <span>Unfreeze Card</span>
+              <span>解冻</span>
             </button>
           </div>
         </div>
@@ -395,18 +376,18 @@ onMounted(() => {
     <div v-if="showAddModal" class="modal-overlay" @click.self="showAddModal = false">
       <div class="modal">
         <div class="modal__header">
-          <h2 class="modal__title">Add New Reader</h2>
+          <h2 class="modal__title">新增读者</h2>
           <button class="modal__close" @click="showAddModal = false">✕</button>
         </div>
         <div v-if="submitError" class="modal__error">{{ submitError }}</div>
         <div class="modal__body">
           <div class="form-row-2">
             <div class="field">
-              <label class="field-label">Name *</label>
-              <div class="input-box"><input v-model="addForm.realName" type="text" placeholder="Full name" /></div>
+              <label class="field-label">姓名 *</label>
+              <div class="input-box"><input v-model="addForm.realName" type="text" placeholder="真实姓名" /></div>
             </div>
             <div class="field">
-              <label class="field-label">Reader Type</label>
+              <label class="field-label">读者类型</label>
               <div class="input-box select-box">
                 <select v-model="addForm.readerTypeId">
                   <option v-for="t in readerTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
@@ -417,19 +398,19 @@ onMounted(() => {
           </div>
           <div class="form-row-2">
             <div class="field">
-              <label class="field-label">Email</label>
-              <div class="input-box"><input v-model="addForm.email" type="email" placeholder="Email" /></div>
+              <label class="field-label">邮箱</label>
+              <div class="input-box"><input v-model="addForm.email" type="email" placeholder="电子邮箱" /></div>
             </div>
             <div class="field">
-              <label class="field-label">Phone</label>
-              <div class="input-box"><input v-model="addForm.phone" type="tel" placeholder="Phone" /></div>
+              <label class="field-label">电话</label>
+              <div class="input-box"><input v-model="addForm.phone" type="tel" placeholder="手机号" /></div>
             </div>
           </div>
         </div>
         <div class="modal__footer">
-          <button class="btn-cancel" @click="showAddModal = false">Cancel</button>
+          <button class="btn-cancel" @click="showAddModal = false">取消</button>
           <button class="btn-primary" :disabled="saving" @click="submitAdd">
-            <span v-if="saving" class="spinner"></span><span v-else>Create Reader</span>
+            <span v-if="saving" class="spinner"></span><span v-else>创建读者</span>
           </button>
         </div>
       </div>
@@ -439,18 +420,18 @@ onMounted(() => {
     <div v-if="showEditModal" class="modal-overlay" @click.self="showEditModal = false">
       <div class="modal">
         <div class="modal__header">
-          <h2 class="modal__title">Edit Reader</h2>
+          <h2 class="modal__title">编辑读者</h2>
           <button class="modal__close" @click="showEditModal = false">✕</button>
         </div>
         <div v-if="editError" class="modal__error">{{ editError }}</div>
         <div class="modal__body">
           <div class="form-row-2">
             <div class="field">
-              <label class="field-label">Name</label>
-              <div class="input-box"><input v-model="editForm.realName" type="text" placeholder="Full name" /></div>
+              <label class="field-label">姓名</label>
+              <div class="input-box"><input v-model="editForm.realName" type="text" placeholder="真实姓名" /></div>
             </div>
             <div class="field">
-              <label class="field-label">Reader Type</label>
+              <label class="field-label">读者类型</label>
               <div class="input-box select-box">
                 <select v-model="editForm.readerTypeId">
                   <option v-for="t in readerTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
@@ -461,19 +442,19 @@ onMounted(() => {
           </div>
           <div class="form-row-2">
             <div class="field">
-              <label class="field-label">Email</label>
-              <div class="input-box"><input v-model="editForm.email" type="email" placeholder="Email" /></div>
+              <label class="field-label">邮箱</label>
+              <div class="input-box"><input v-model="editForm.email" type="email" placeholder="电子邮箱" /></div>
             </div>
             <div class="field">
-              <label class="field-label">Phone</label>
-              <div class="input-box"><input v-model="editForm.phone" type="tel" placeholder="Phone" /></div>
+              <label class="field-label">电话</label>
+              <div class="input-box"><input v-model="editForm.phone" type="tel" placeholder="手机号" /></div>
             </div>
           </div>
         </div>
         <div class="modal__footer">
-          <button class="btn-cancel" @click="showEditModal = false">Cancel</button>
+          <button class="btn-cancel" @click="showEditModal = false">取消</button>
           <button class="btn-primary" :disabled="editLoading" @click="submitEdit">
-            <span v-if="editLoading" class="spinner"></span><span v-else>Save Changes</span>
+            <span v-if="editLoading" class="spinner"></span><span v-else>保存修改</span>
           </button>
         </div>
       </div>
@@ -483,20 +464,6 @@ onMounted(() => {
 
 <style scoped>
 .admin-readers { display: flex; min-height: 100vh; flex: 1; width: 100%; background: var(--bg-secondary, #F7F8FA); }
-
-/* Sidebar */
-.sidebar { width: 240px; background: var(--bg-inverse, #0A0A0A); display: flex; flex-direction: column; flex-shrink: 0; }
-.sidebar__logo { display: flex; align-items: center; gap: 10px; padding: 20px; font-size: 22px; color: var(--text-inverse, #FFF); }
-.sidebar__logo-text { font-family: var(--font-sans, Inter); font-size: 18px; font-weight: 700; }
-.sidebar__nav { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
-.sidebar__item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; cursor: pointer; font-family: var(--font-sans, Inter); font-size: 13px; color: var(--text-muted, #888); transition: background 0.15s; }
-.sidebar__item:hover { background: rgba(255,255,255,0.05); }
-.sidebar__item--active { background: var(--accent, #4A9FD8); color: var(--text-inverse, #FFF); font-weight: 600; }
-.sidebar__item-icon { font-size: 16px; width: 20px; text-align: center; }
-.sidebar__bottom { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08); font-family: var(--font-sans, Inter); font-size: 12px; color: var(--text-inverse, #FFF); }
-.sidebar__avatar { width: 32px; height: 32px; border-radius: 999px; background: var(--accent-light, #E8F4FD); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--accent, #4A9FD8); flex-shrink: 0; }
-
-/* Main */
 .main { flex: 1; padding: 32px 40px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; }
 .header { display: flex; justify-content: space-between; align-items: center; }
 .header__title { font-family: var(--font-sans, Inter); font-size: 24px; font-weight: 700; color: var(--text-primary, #1A1A1A); margin: 0; }
@@ -569,21 +536,16 @@ onMounted(() => {
 .msg { padding: 10px 14px; border-radius: 10px; font-size: 13px; }
 .msg--success { background: rgba(52,211,153,0.1); color: var(--success, #34D399); border: 1px solid var(--success, #34D399); }
 .msg--error { background: rgba(248,113,113,0.1); color: var(--danger, #F87171); border: 1px solid var(--danger, #F87171); }
-
-/* Reader Info Card */
 .reader-info-card { display: flex; flex-direction: column; gap: 6px; padding: 14px; background: var(--bg-secondary, #F7F8FA); border-radius: 10px; }
 .reader-info-name { font-family: var(--font-sans, Inter); font-size: 14px; font-weight: 600; color: var(--text-primary, #1A1A1A); margin: 0; }
 .reader-info-detail { font-family: var(--font-sans, Inter); font-size: 12px; color: var(--text-muted, #888); margin: 0; }
 .reader-info-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-family: var(--font-sans, Inter); font-size: 11px; font-weight: 500; color: var(--text-inverse, #FFF); width: fit-content; }
-
-/* Card Actions */
 .card-actions { display: flex; flex-direction: column; gap: 8px; }
 .card-action-btn { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: var(--bg-primary, #FFF); border: 1px solid var(--border, #E5E7EB); cursor: pointer; font-family: var(--font-sans, Inter); font-size: 14px; font-weight: 500; color: var(--text-primary, #1A1A1A); transition: box-shadow 0.15s; text-align: left; width: 100%; }
 .card-action-btn:hover:not(:disabled) { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 .card-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .card-action-icon { font-size: 18px; line-height: 1; }
 
-/* Form */
 .field { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
 .field-label { font-family: var(--font-sans, Inter); font-size: 13px; font-weight: 500; color: var(--text-primary, #1A1A1A); }
 .input-box { width: 100%; padding: 10px 14px; border-radius: var(--input-radius, 12px); background: var(--bg-secondary, #F7F8FA); border: 1.5px solid var(--border, #E5E7EB); transition: border-color 0.2s; }
@@ -595,7 +557,6 @@ onMounted(() => {
 .select-arrow { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 10px; color: var(--text-muted, #888); pointer-events: none; }
 .form-row-2 { display: flex; gap: 12px; }
 
-/* Buttons */
 .btn-primary { display: flex; align-items: center; justify-content: center; padding: 10px 24px; border-radius: var(--button-radius, 10px); background: var(--accent, #4A9FD8); color: var(--text-inverse, #FFF); font-family: var(--font-sans, Inter); font-size: 14px; font-weight: 600; border: none; cursor: pointer; transition: opacity 0.15s; min-width: 120px; }
 .btn-primary:hover:not(:disabled) { opacity: 0.9; }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -603,12 +564,10 @@ onMounted(() => {
 .btn-cancel:hover { background: var(--bg-secondary, #F7F8FA); }
 .spinner { width: 16px; height: 16px; border: 2px solid var(--text-inverse, #FFF); border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.toolbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .advanced-search { background: var(--bg-primary,#FFF); border: 1px solid var(--border,#E5E7EB); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 .adv-row { display: flex; gap: 16px; }
 .adv-field { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .adv-field label { font-size: 11px; color: var(--text-muted,#888); font-weight: 500; }
 .adv-field input, .adv-field select { padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border,#E5E7EB); background: var(--bg-secondary,#F7F8FA); font-family: var(--font-sans,Inter); font-size: 12px; color: var(--text-primary,#1A1A1A); outline: none; }
 .adv-field input:focus, .adv-field select:focus { border-color: var(--accent,#4A9FD8); }
-.adv-actions { display: flex; gap: 8px; }
 </style>

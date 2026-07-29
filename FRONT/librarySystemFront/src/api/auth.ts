@@ -57,3 +57,8 @@ export async function refreshTokenApi(refreshToken: string): Promise<{ accessTok
 export async function registerApi(params: RegisterParams): Promise<any> {
   return http.post('/auth/register', params) as any
 }
+
+/** Change password */
+export async function changePassword(data: { oldPassword: string; newPassword: string; confirmPassword: string }): Promise<void> {
+  return http.put('/auth/password', data) as any
+}

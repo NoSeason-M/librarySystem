@@ -236,4 +236,55 @@ public class ReaderService {
         }
         return String.format("RD%s%04d", year, next);
     }
+
+    // ==================== Reader Self-Service ====================
+
+    public Map<String, Object> getMyProfile(Long userId) {
+        Reader reader = readerMapper.selectOne(
+                new LambdaQueryWrapper<Reader>().eq(Reader::getUserId, userId));
+        if (reader == null) throw new BusinessException("Reader not found");
+
+        Map<String, Object> item = toReaderItem(reader);
+
+        // Also add readerType info
+        if (reader.getReaderTypeId() != null) {
+            ReaderType rt = readerTypeMapper.selectById(reader.getReaderTypeId());
+            if (rt != null) {
+                item.put("readerTypeName", rt.getName());
+                item.put("maxBorrow", rt.getMaxBorrow());
+                item.put("borrowDays", rt.getBorrowDays());
+            }
+        }
+
+        // Add user-specific info
+        SysUser user = userMapper.selectById(userId);
+        if (user != null) {
+            item.put("realName", user.getRealName());
+            item.put("email", user.getEmail());
+            item.put("phone", user.getPhone());
+            item.put("avatar", user.getAvatar());
+        }
+
+        return item;
+    }
+
+    @Transactional
+    public void updateMyProfile(Long userId, Map<String, Object> req) {
+        SysUser user = userMapper.selectById(userId);
+        if (user == null) throw new BusinessException("User not found");
+
+        if (req.containsKey("realName")) {
+            String realName = (String) req.get("realName");
+            if (realName != null && !realName.trim().isEmpty()) {
+                user.setRealName(realName.trim());
+            }
+        }
+        if (req.containsKey("email")) {
+            user.setEmail((String) req.get("email"));
+        }
+        if (req.containsKey("phone")) {
+            user.setPhone((String) req.get("phone"));
+        }
+        userMapper.updateById(user);
+    }
 }

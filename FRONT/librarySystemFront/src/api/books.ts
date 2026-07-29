@@ -21,8 +21,13 @@ export interface PageResult<T> {
   records: T[]; total: number; size: number; current: number; pages: number
 }
 
-export async function searchBooks(keyword?: string, page = 1, size = 10) {
-  return http.get('/books', { params: { keyword, page, size } }) as any
+export async function searchBooks(params: {
+  keyword?: string; author?: string; isbn?: string; categoryId?: number;
+  publisherId?: number; language?: string; yearStart?: string; yearEnd?: string;
+  availableOnly?: boolean; sort?: string; page?: number; size?: number;
+} = {}) {
+  const { page = 1, size = 10, ...rest } = params
+  return http.get('/books', { params: { ...rest, page, size } }) as any
 }
 export async function getHotBooks(limit = 10) {
   return http.get('/books/hot', { params: { limit } }) as any
@@ -40,8 +45,14 @@ export async function getBookCopies(id: number) {
   return http.get(`/books/${id}/copies`) as any
 }
 
-export async function listAdminBooks(keyword?: string, author?: string, isbn?: string, categoryId?: number, publisher?: string, language?: string, binding?: string, yearStart?: string, yearEnd?: string, statusFilter?: string, page = 1, size = 10) {
-  return http.get('/books/admin/list', { params: { keyword, page, size } }) as any
+export async function listAdminBooks(params: {
+  keyword?: string; author?: string; isbn?: string; categoryId?: number;
+  publisher?: string; language?: string; binding?: string;
+  yearStart?: string; yearEnd?: string; statusFilter?: string;
+  page?: number; size?: number;
+} = {}) {
+  const { page = 1, size = 10, ...rest } = params
+  return http.get('/books/admin/list', { params: { ...rest, page, size } }) as any
 }
 export async function createBook(data: any) {
   return http.post('/books', data) as any

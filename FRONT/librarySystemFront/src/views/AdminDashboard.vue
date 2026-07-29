@@ -6,13 +6,13 @@ import { getCirculationStats, getCollectionStats, getReaderStats, getRecentActiv
 const router = useRouter()
 
 const adminNav = [
-  { icon: '📊', label: 'Dashboard' },
-  { icon: '📖', label: 'Borrow/Return' },
-  { icon: '📚', label: 'Books' },
-  { icon: '👥', label: 'Readers' },
-  { icon: '📈', label: 'Statistics' },
-  { icon: '💰', label: 'Fines' },
-  { icon: '⚙️', label: 'Settings' },
+  { icon: '📊', label: '工作台' },
+  { icon: '📖', label: '借还管理' },
+  { icon: '📚', label: '图书管理' },
+  { icon: '👥', label: '读者管理' },
+  { icon: '📈', label: '统计分析' },
+  { icon: '💰', label: '罚款管理' },
+  { icon: '⚙️', label: '系统设置' },
 ]
 
 const dayjs = ref('')
@@ -33,8 +33,8 @@ const error = ref('')
 const categoryNames = computed(() => categoryData.value.slice(0, 5))
 
 onMounted(async () => {
-  todayStr.value = new Date().toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'short', day: 'numeric',
+  todayStr.value = new Date().toLocaleDateString('zh-CN', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   })
   try {
     const [circulation, collection, readerStat, activity] = await Promise.all([
@@ -45,42 +45,42 @@ onMounted(async () => {
     ])
     if (circulation) {
       stats.borrowedToday.value = String(circulation.today?.borrowCount ?? '0')
-      stats.borrowedToday.change = '+0 today'
+      stats.borrowedToday.change = '今日新增'
       stats.overdue.value = String(circulation.overall?.overdueRate ?? '0') + '%'
-      stats.overdue.change = 'overdue rate'
+      stats.overdue.change = '逾期率'
     }
     if (collection) {
       stats.totalBooks.value = String(collection.totalBooks ?? '0')
-      stats.totalBooks.change = `${collection.totalCopies ?? 0} total copies`
+      stats.totalBooks.change = `${collection.totalCopies ?? 0} 本总副本`
       categoryData.value = collection.categoryDistribution ?? []
     }
     if (readerStat) {
       stats.activeReaders.value = String(readerStat.totalReaders ?? '0')
-      stats.activeReaders.change = `${readerStat.activeReaders ?? 0} active`
+      stats.activeReaders.change = `${readerStat.activeReaders ?? 0} 活跃`
     }
     activities.value = activity
   } catch {
-    error.value = 'Failed to load dashboard data'
+    error.value = '加载数据失败'
   } finally {
     loading.value = false
   }
 })
 
 function navigate(label: string) {
-  if (label === 'Dashboard') return
-  if (label === 'Books') { router.push('/admin/books'); return }
-  if (label === 'Readers') { router.push('/admin/readers'); return }
-  if (label === 'Statistics') { router.push('/admin/statistics'); return }
-  if (label === 'Settings') { router.push('/admin/settings'); return }
+  if (label === '工作台') return
+  if (label === '图书管理') { router.push('/admin/books'); return }
+  if (label === '读者管理') { router.push('/admin/readers'); return }
+  if (label === '统计分析') { router.push('/admin/statistics'); return }
+  if (label === '系统设置') { router.push('/admin/settings'); return }
   router.push('/admin')
 }
 
 function quickAction(label: string) {
   const routes: Record<string, string> = {
-    'Borrow Book': '/admin/borrow',
-    'Return Book': '/admin/return',
-    'Add New Book': '/admin/books',
-    'Register Reader': '/admin/readers',
+    '借书': '/admin/borrow',
+    '还书': '/admin/return',
+    '新增图书': '/admin/books',
+    '注册读者': '/admin/readers',
   }
   const path = routes[label]
   if (path) router.push(path)
@@ -92,31 +92,31 @@ function quickAction(label: string) {
 
     <main class="main">
       <header class="header">
-        <h1 class="header__title">Dashboard</h1>
+        <h1 class="header__title">工作台</h1>
         <div class="header__date">{{ todayStr }}</div>
       </header>
 
       <div v-if="error" class="error-msg">{{ error }}</div>
-      <div v-if="loading" class="loading-msg">Loading dashboard...</div>
+      <div v-if="loading" class="loading-msg">加载中...</div>
 
       <div v-if="!loading" class="stats-row">
         <div class="stat-card">
-          <span class="stat-label">Total Books</span>
+          <span class="stat-label">总藏书量</span>
           <span class="stat-value">{{ stats.totalBooks.value }}</span>
           <span class="stat-trend" style="color:#4A9FD8">{{ stats.totalBooks.change }}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">Active Readers</span>
+          <span class="stat-label">活跃读者</span>
           <span class="stat-value">{{ stats.activeReaders.value }}</span>
           <span class="stat-trend" style="color:#34D399">{{ stats.activeReaders.change }}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">Borrowed Today</span>
+          <span class="stat-label">今日借出</span>
           <span class="stat-value">{{ stats.borrowedToday.value }}</span>
           <span class="stat-trend" style="color:#FBBF24">{{ stats.borrowedToday.change }}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">Overdue</span>
+          <span class="stat-label">逾期率</span>
           <span class="stat-value">{{ stats.overdue.value }}</span>
           <span class="stat-trend" style="color:#F87171">{{ stats.overdue.change }}</span>
         </div>
@@ -124,9 +124,9 @@ function quickAction(label: string) {
 
       <div v-if="!loading" class="two-col">
         <div class="col-left">
-          <h2 class="section-title">📋 Recent Activity</h2>
+          <h2 class="section-title">📋 最近活动</h2>
           <div class="activity-list">
-            <div v-if="activities.length === 0" class="empty-state">No recent activity</div>
+            <div v-if="activities.length === 0" class="empty-state">暂无最近活动</div>
             <div v-for="(act, i) in activities" :key="i" class="activity-item">
               <span class="activity-dot" :style="{ background: act.color }"></span>
               <div class="activity-info">
@@ -137,20 +137,20 @@ function quickAction(label: string) {
           </div>
         </div>
         <div class="col-right">
-          <h2 class="section-title">⚡ Quick Actions</h2>
+          <h2 class="section-title">⚡ 快捷操作</h2>
           <div class="quick-actions">
             <div v-for="btn in [
-              { i:'📕', l:'Borrow Book' }, { i:'📗', l:'Return Book' },
-              { i:'➕', l:'Add New Book' }, { i:'👤', l:'Register Reader' }
+              { i:'📕', l:'借书' }, { i:'📗', l:'还书' },
+              { i:'➕', l:'新增图书' }, { i:'👤', l:'注册读者' }
             ]" :key="btn.l" class="action-btn" @click="quickAction(btn.l)">
               <span>{{ btn.i }}</span>
               <span class="action-btn__label">{{ btn.l }}</span>
             </div>
           </div>
 
-          <h2 class="section-title">📊 Collection by Category</h2>
+          <h2 class="section-title">📊 馆藏分类</h2>
           <div class="category-chart">
-            <div v-if="categoryData.length === 0" class="empty-state">No category data</div>
+            <div v-if="categoryData.length === 0" class="empty-state">暂无分类数据</div>
             <div v-for="cat in categoryNames" :key="cat.name" class="cat-row">
               <span class="cat-name">{{ cat.name }}</span>
               <div class="cat-bar-bg">
@@ -167,16 +167,6 @@ function quickAction(label: string) {
 
 <style scoped>
 .admin-layout { display: flex; min-height: 100vh; flex: 1; width: 100%; background: var(--bg-secondary, #F7F8FA); }
-.sidebar { width: 240px; background: var(--bg-inverse, #0A0A0A); display: flex; flex-direction: column; flex-shrink: 0; }
-.sidebar__logo { display: flex; align-items: center; gap: 10px; padding: 20px; font-size: 22px; color: var(--text-inverse,#FFF); }
-.sidebar__logo-text { font-family: var(--font-sans,Inter); font-size: 18px; font-weight: 700; }
-.sidebar__nav { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
-.sidebar__item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; cursor: pointer; font-family: var(--font-sans,Inter); font-size: 13px; color: var(--text-muted,#888); transition: background 0.15s; }
-.sidebar__item:hover { background: rgba(255,255,255,0.05); }
-.sidebar__item--active { background: var(--accent,#4A9FD8); color: var(--text-inverse,#FFF); font-weight: 600; }
-.sidebar__item-icon { font-size: 16px; width: 20px; text-align: center; }
-.sidebar__bottom { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08); font-family: var(--font-sans,Inter); font-size: 12px; color: var(--text-inverse,#FFF); }
-.sidebar__avatar { width: 32px; height: 32px; border-radius: 999px; background: var(--accent-light,#E8F4FD); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--accent,#4A9FD8); flex-shrink: 0; }
 .main { flex: 1; padding: 32px 40px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; }
 .header { display: flex; justify-content: space-between; align-items: center; }
 .header__title { font-family: var(--font-sans,Inter); font-size: 24px; font-weight: 700; color: var(--text-primary,#1A1A1A); margin: 0; }
